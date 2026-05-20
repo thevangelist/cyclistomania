@@ -1,0 +1,12 @@
+{
+    "name": "cyclistomania",
+    "version": "0.1.0",
+    "description": "Across/Elasto Mania inspired cycling physics game",
+    "scripts": {
+        "dev": "parcel index.html",
+        "build": "parcel build index.html --public-url ./"
+    },
+    "devDependencies": {
+        "parcel": "^2.12.0"
+    }
+}

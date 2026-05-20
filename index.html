@@ -1,0 +1,2607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>Cyclistomania</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" />
+<style>
+  :root {
+    color-scheme: light;
+    --font-family-base: "Silkscreen", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --font-family-display: "Silkscreen", ui-monospace, monospace;
+
+    /* Typography scale */
+    --fs-2xs: 14px;
+    --fs-xs: 15px;
+    --fs-sm: 17px;
+    --fs-md: 19px;
+    --fs-lg: 24px;
+    --fs-xl: 40px;
+    --fs-hero-min: 34px;
+    --fs-hero-fluid: 7vw;
+    --fs-hero-max: 72px;
+
+    --fw-regular: 400;
+    --fw-bold: 700;
+
+    --lh-tight: 1;
+    --lh-normal: 1.4;
+    --lh-relaxed: 1.65;
+    --lh-loose: 1.75;
+
+    --ls-tight: 0px;
+    --ls-normal: .2px;
+    --ls-wide: .45px;
+    --ls-xwide: .9px;
+    --sky-top: #7ec0f6;
+    --sky-mid: #abd9ff;
+    --sky-bot: #dff1ff;
+    --hud-fg: #163a57;
+    --hud-accent: #0f5f8a;
+    --hud-bg: rgba(242, 250, 255, .84);
+    --hud-border: rgba(22, 64, 98, .36);
+    --panel-shadow: rgba(16, 45, 69, .16);
+    --terrain-city: #596f82;
+    --terrain-road: #4f6171;
+    --terrain-gravel: #9b8f73;
+    --terrain-forest: #6f6548;
+    --terrain-hill: #7e7567;
+    --ui-ink-1: #f6fbff;
+    --ui-ink-2: #d8ecfa;
+    --ui-track: rgba(255, 255, 255, .18);
+    --ui-track-border: rgba(255, 255, 255, .34);
+    --ui-fill-a: #2f9ad1;
+    --ui-fill-b: #62d0c5;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0d1b2a; }
+  body { font-family: var(--font-family-base); }
+  #game { display: block; width: 100vw; height: 100vh; touch-action: none; cursor: crosshair; }
+
+  /* HUD */
+  .hud {
+    position: fixed;
+    pointer-events: none;
+    color: var(--hud-fg);
+    text-shadow: 0 1px 0 rgba(255,255,255,.42);
+    user-select: none;
+    font-family: var(--font-family-base);
+    font-weight: var(--fw-regular);
+    line-height: var(--lh-normal);
+    letter-spacing: var(--ls-tight);
+  }
+  .clockbox {
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+  }
+  #bottomHud {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 22px 26px 22px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 22px;
+    align-items: stretch;
+    background: transparent;
+    border-top: none;
+    box-shadow: none;
+    color: var(--ui-ink-1);
+    text-shadow: 0 1px 2px rgba(8, 22, 34, .68);
+  }
+  .hud-left {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr auto;
+    gap: 22px;
+    align-items: stretch;
+  }
+  .hud-right {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 22px;
+    align-items: stretch;
+  }
+  .hud-panel {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 8px 14px;
+    min-height: 82px;
+    display: grid;
+    align-content: start;
+  }
+  .hud-panel-metric { grid-template-rows: 16px 18px 40px; }
+  .hud-panel-section,
+  .hud-panel-radlers { grid-template-rows: 16px 44px; }
+  .hud-label {
+    font-size: 12px;
+    letter-spacing: .8px;
+    color: var(--ui-ink-2);
+    opacity: .9;
+    margin-bottom: 0;
+    line-height: 16px;
+    align-self: start;
+  }
+  .route-track, .cad-track, .speed-track {
+    width: 100%;
+    height: 18px;
+    border-radius: 0;
+    background: var(--ui-track);
+    overflow: hidden;
+    border: 1px solid var(--ui-track-border);
+  }
+  .route-profile {
+    width: 100%;
+    height: 18px;
+    border-radius: 0;
+    background: var(--ui-track);
+    border: 1px solid var(--ui-track-border);
+    display: block;
+  }
+  .route-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--ui-fill-a), var(--ui-fill-b));
+    transition: width .1s linear;
+  }
+  .cad-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--ui-fill-a), var(--ui-fill-b));
+    transition: width .1s linear;
+  }
+  .speed-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--ui-fill-a), var(--ui-fill-b));
+    transition: width .08s linear;
+  }
+  .route-text {
+    margin-top: 6px;
+    font-size: 19px;
+    color: var(--ui-ink-1);
+    letter-spacing: .2px;
+    min-height: 32px;
+    display: flex;
+    align-items: flex-end;
+    font-variant-numeric: tabular-nums;
+  }
+  .route-text b { color: var(--ui-ink-1); }
+  #dist { display: inline-block; min-width: 7ch; text-align: right; }
+  .cad-text {
+    margin-top: 6px;
+    font-size: 19px;
+    color: var(--ui-ink-1);
+    min-height: 32px;
+    display: flex;
+    align-items: flex-end;
+    font-variant-numeric: tabular-nums;
+  }
+  .section-name {
+    font-size: 28px;
+    line-height: 1;
+    letter-spacing: .8px;
+    color: var(--ui-ink-1);
+    text-shadow: 0 1px 0 rgba(255,255,255,.45);
+    white-space: nowrap;
+    min-height: 44px;
+    display: flex;
+    align-items: flex-end;
+  }
+  .speed-card {
+    min-width: 198px;
+  }
+  .speed-value {
+    margin-top: 6px;
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    min-height: 34px;
+    font-variant-numeric: tabular-nums;
+  }
+  .speed-value b {
+    font-size: 34px;
+    line-height: 1;
+    color: var(--ui-ink-1);
+    min-width: 3ch;
+    text-align: right;
+  }
+  .speed-value span {
+    font-size: 16px;
+    color: var(--ui-ink-2);
+  }
+  .radler-row {
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+    min-height: 44px;
+  }
+  .radler-icon {
+    width: 34px;
+    height: 42px;
+    object-fit: contain;
+    filter: grayscale(.95) brightness(.72);
+    opacity: .34;
+    transform: translateY(0);
+    transition: opacity .2s ease, filter .2s ease, transform .2s ease;
+  }
+  .radler-icon.got {
+    filter: grayscale(0) brightness(1);
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+  #help {
+    top: 76px;
+    left: 50%; transform: translateX(-50%);
+    font-size: var(--fs-sm);
+    line-height: var(--lh-relaxed);
+    letter-spacing: var(--ls-tight);
+    opacity: .96; padding: 0; border-radius: 0;
+    border: none;
+    background: transparent;
+    white-space: nowrap;
+    pointer-events: auto;
+  }
+  #help kbd {
+    display: inline-block; min-width: 26px; text-align: center; padding: 7px 13px; margin: 0 3px;
+    color: #14324c;
+    border: 1px solid #3a5a78;
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: #d8ebff;
+    font-size: var(--fs-xs);
+    font-family: var(--font-family-base);
+    line-height: var(--lh-tight);
+  }
+  .sound-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 6px;
+    min-width: 24px;
+    padding: 7px 13px;
+    color: #14324c;
+    border: 1px solid #3a5a78;
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: #d8ebff;
+    font-size: var(--fs-xs);
+    font-family: var(--font-family-base);
+    line-height: var(--lh-tight);
+    cursor: pointer;
+    user-select: none;
+    text-shadow: none;
+    vertical-align: middle;
+  }
+  .sound-toggle input {
+    width: 12px;
+    height: 12px;
+    accent-color: #2f78ac;
+    cursor: pointer;
+    margin: 0;
+  }
+  #title {
+    top: 4px;
+    left: 50%; transform: translateX(-50%);
+    font-size: var(--fs-lg);
+    line-height: var(--lh-tight);
+    letter-spacing: var(--ls-wide);
+    color: #184664;
+    text-shadow: 0 1px 0 rgba(255,255,255,.55);
+    font-weight: var(--fw-bold);
+    font-family: var(--font-family-display);
+  }
+
+  /* Simple title style */
+  .retro {
+    background: none;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+    -webkit-text-stroke: 0;
+    paint-order: normal;
+  }
+
+  /* Digital clocks in the corners (Across style, seven-segment) */
+  .clockbox.tl { top: 44px; left: 20px; text-align: left; }
+  .clockbox.tr { top: 44px; right: 22px; text-align: right; }
+  .clockbox .lab {
+    font-size: var(--fs-xs);
+    letter-spacing: var(--ls-xwide);
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    color: #183d5f;
+    opacity: .95;
+    margin-bottom: 3px;
+  }
+  .lcd {
+    font-family: var(--font-family-display);
+    font-size: var(--fs-xl);
+    letter-spacing: var(--ls-wide);
+    line-height: var(--lh-tight);
+    font-weight: var(--fw-regular);
+    color: #28455f; text-shadow: 0 1px 0 rgba(255,255,255,.55);
+  }
+  .clockbox.tr .lcd { color: #32516d; }
+
+  @media (max-width: 900px) {
+    #title { top: 8px; font-size: 20px; }
+    .clockbox.tl { top: 36px; left: 12px; }
+    .clockbox.tr { top: 36px; right: 12px; }
+    .lcd { font-size: 32px; }
+    #bottomHud {
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 8px;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .hud-left {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .hud-right {
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .section-name { font-size: 22px; }
+    .hud-panel { min-height: 74px; }
+    .hud-panel-metric { grid-template-rows: 16px 18px 32px; }
+    .hud-panel-section,
+    .hud-panel-radlers { grid-template-rows: 16px 36px; }
+    .speed-card { min-width: 0; }
+    .speed-value b { font-size: 28px; }
+    .route-text, .cad-text { font-size: 17px; }
+    .radler-icon { width: 30px; height: 38px; }
+    #help {
+      top: 72px;
+      left: 50%; right: auto;
+      transform: translateX(-50%);
+      font-size: 14px;
+      white-space: normal;
+      text-align: center;
+      max-width: min(96vw, 880px);
+    }
+  }
+
+  #intro {
+    position: fixed; inset: 0; z-index: 20;
+    display: grid; place-items: center;
+    background: #000;
+    pointer-events: auto;
+  }
+  #intro.hide { display: none; }
+  #intro .card {
+    text-align: center;
+    color: #fff;
+    text-shadow: none;
+  }
+  #intro img {
+    width: auto;
+    max-width: min(92vw, 950px);
+    max-height: 72vh;
+    height: auto;
+    object-fit: contain;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  #overlay {
+    position: fixed; inset: 0; display: none; place-items: center; pointer-events: none;
+    background: radial-gradient(circle at 50% 45%, rgba(44,86,121,.0), rgba(30,62,89,.7));
+  }
+  #overlay.show { display: grid; }
+  #overlay .card { text-align: center; color: #fff; }
+  #overlay .big {
+    font-size: clamp(var(--fs-hero-min), var(--fs-hero-fluid), var(--fs-hero-max));
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+    letter-spacing: var(--ls-xwide);
+    font-family: var(--font-family-display);
+  }
+  #overlay .big.crash { color: #ff6b6b; }
+  #overlay .big.win  { color: #66e0c8; }
+  #overlay .sub {
+    margin-top: 10px;
+    font-size: var(--fs-md);
+    line-height: var(--lh-normal);
+    letter-spacing: var(--ls-normal);
+    opacity: .9;
+    font-family: var(--font-family-base);
+  }
+  #overlay .sub kbd {
+    padding: 1px 7px;
+    border: 1px solid #5a7a98;
+    border-radius: 5px;
+    background: rgba(255,255,255,.08);
+    font-size: var(--fs-sm);
+    line-height: var(--lh-tight);
+  }
+</style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="intro">
+    <div class="card">
+      <img src="intro.jpeg" alt="Cyclistomania" />
+    </div>
+  </div>
+
+  <div class="hud clockbox tl">
+    <div class="lab">TIME</div>
+    <div id="clkTime" class="lcd">00:00:00</div>
+  </div>
+  <div class="hud clockbox tr">
+    <div class="lab">BEST</div>
+    <div id="clkBest" class="lcd">--:--:--</div>
+  </div>
+  <div id="bottomHud" class="hud">
+    <div class="hud-left">
+      <div class="hud-panel hud-panel-metric">
+        <div class="hud-label">ROUTE PROGRESS</div>
+        <canvas id="routeProfile" class="route-profile"></canvas>
+        <div class="route-text"><b id="dist">0.00</b> <span id="distMeta">/ 0.05 km</span></div>
+      </div>
+      <div class="hud-panel hud-panel-metric">
+        <div class="hud-label">CADENCE</div>
+        <div class="cad-track"><div id="cadBar" class="cad-fill"></div></div>
+        <div class="cad-text" id="pedal">0 rpm</div>
+      </div>
+      <div class="hud-panel hud-panel-section">
+        <div class="hud-label">SECTION</div>
+        <div id="zone" class="section-name">—</div>
+      </div>
+    </div>
+
+    <div class="hud-right">
+      <div class="hud-panel hud-panel-metric speed-card">
+        <div class="hud-label">SPEEDOMETER</div>
+        <div class="speed-track"><div id="speedBar" class="speed-fill"></div></div>
+        <div class="speed-value"><b id="speed">0</b><span>km/h</span></div>
+      </div>
+      <div class="hud-panel hud-panel-radlers">
+        <div class="hud-label">RADLERS</div>
+        <div class="radler-row">
+          <img id="radler1" class="radler-icon" src="radler.png" alt="radler" />
+          <img id="radler2" class="radler-icon" src="radler.png" alt="radler" />
+          <img id="radler3" class="radler-icon" src="radler.png" alt="radler" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="help" class="hud">
+    🖱️ <b>Scroll = pedal</b> &nbsp; <kbd>↓</kbd> brake &nbsp;
+    <kbd>←</kbd><kbd>→</kbd> lean &nbsp;
+    <kbd>R</kbd> restart
+    <label class="sound-toggle" for="soundToggle">
+      <input id="soundToggle" type="checkbox" checked />
+      <span id="muteToggle">SOUND (M)</span>
+    </label>
+  </div>
+
+  <div id="overlay" class="hud">
+    <div class="card">
+      <div id="overlayBig" class="big"></div>
+      <div id="overlaySub" class="sub"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <script type="module">
+  "use strict";
+
+  /* ----------------------------------------------------------------------
+     Cyclistomania — a single-file Across / Elasto Mania-style
+     physics game. Matter.js handles the physics; rendering is done by hand on canvas
+     for the camera, zoom, and a minimalist style.
+     ---------------------------------------------------------------------- */
+
+  const { Engine, Bodies, Body, Composite, Constraint, Events } = Matter;
+
+  // --- Tune the game here -------------------------------------------------
+  const CFG = {
+    seg:        14,     // terrain segment width (px) — smaller = smoother road
+    wheelR:     23,     // wheel radius (a bit larger)
+    wheelInches: 28,    // real wheel size for calculations
+    wheelbase:  78,     // wheelbase
+    crankStep:  1.0,    // crank rotation per scroll notch (rad)
+    chainringTeeth: 55, // typical pro-road large chainring
+    rearCogTeeth: 11,   // typical smallest cog for stage riding
+    cadenceFull:0.6,    // crank speed at which the cadence meter is full
+    cadenceMaxRpm: 150, // slightly lower cap, stays more controllable
+    coastCadenceMul: 0.48, // share of wheel speed transferred to the legs while coasting
+    coastCadenceMax: 0.15, // max coasting crank speed (rad/frame)
+    pedalMax:   2.35,   // wheel top angular velocity (mechanical cap)
+    strollKick: 0.055,  // small scroll -> slow bike-like start
+    strollMax:  0.85,   // stroll speed cap
+    scrollKick: 0.11,   // each scroll impulse builds drive momentum
+    scrollKickMax: 2.00, // drive momentum cap
+    inputStepMax: 0.22, // max momentum gain from a single scroll event
+    scrollFastMs: 90, // events faster than this count as fast-paced
+    groundInputScale: 1.0, // input power when the rear wheel has grip
+    airInputScale: 0.28, // input power in the air (no catapult)
+    startAssistKph: 10,  // start-off range
+    startAssistMul: 1.18, // extra push from low speed
+    momentumDecayLow: 0.968, // light input decays more slowly
+    momentumDecayHigh: 0.995, // hard input carries longer
+    momentumAirDecay: 0.972, // momentum fades a bit faster in the air
+    frontDriveShare: 0.00, // no front drive: more stable bike behavior
+    driveStepMax: 0.040, // max drive per frame (prevents stutter)
+    burstRise: 0.62, // consecutive fast scrolls increase drive
+    burstDecay: 0.95, // burst fades if scroll rate drops
+    burstBoostMax: 1.45, // many fast scrolls -> clear extra drive
+    antiFlipDamp: 0.68, // chassis angular damping while pedaling
+    slopeAssist: 0.026, // gently rotate the chassis toward the slope
+    tractionPress: 0.00038, // light downward force that adds traction
+    bounceNoHopKph: 58, // below this the bike must not hop (50-60 stays grounded)
+    bounceFullKph: 135, // around this hopping is clearly allowed
+    bounceDownhillBonusKph: 16, // more hopping allowed when riding downhill
+    bounceUphillPenaltyKph: 20, // uphill hopping is restrained earlier
+    hopClampLow: 0.55, // low-speed anti-hop damping (tight)
+    hopClampHigh: 0.86, // high-speed anti-hop damping (lighter)
+    landChassisLow: 0.62, // chassis landing damping at low speeds
+    landChassisHigh: 0.90, // chassis landing damping at high speeds
+    landWheelLow: 0.65, // wheel landing damping at low speeds
+    landWheelHigh: 0.92, // wheel landing damping at high speeds
+    airDrag:    0.0028, // lower air drag -> speed carries clearly longer
+    brake:      0.84,   // brake damping / frame
+    lean:       0.0115, // base lean force (snappier response)
+    leanMaxMul: 3.8,    // a long press increases the effect up to this
+    leanRampMs: 520,    // milliseconds to full lean force
+    arrowLeanBoost: 1.35, // Across-style extra reaction for arrow keys
+    wheeliePedalBoost: 2.4, // while wheelie-ing, harder pedaling speeds up the rotation
+    climbHardness: 1.3,     // steep climb -> harder to pedal (0 = no effect)
+    suspStiff:  1.00,   // stiff constraints (no stretch)
+    suspDamp:   0.46,   // suspension damping absorbs bumps -> less micro-bounce at speed
+    gravity:    1.0,
+  };
+  const gearRatioNow = () => CFG.chainringTeeth / Math.max(1, CFG.rearCogTeeth);
+  const wheelCircumferenceM = () => Math.PI * CFG.wheelInches * 0.0254;
+  const wheelCircumferencePx = () => Math.PI * 2 * CFG.wheelR;
+  const pxPerMeter = () => wheelCircumferencePx() / Math.max(0.0001, wheelCircumferenceM());
+  const FREEWHEEL = {
+    hubTeeth: 36,      // typical ratchet ring
+    audibleDiv: 2,     // not every click is heard separately
+    minHz: 4,
+    maxHz: 34,
+  };
+
+  // --- Track zones: long stage-style stretches over an 80 km route ---------
+  // hill = gentle macro hills, low = mid-frequency shapes,
+  // rough = surface roughness, rf = roughness frequency,
+  // rollAmp/rollFreq = the zone's own undulation,
+  // jumpAmp/jumpSpacing = the zone's jump line.
+  const M = pxPerMeter();
+  const ZONES = [
+    // Total: 80 km. Climbs/descents are now genuinely kilometers long.
+    { name: "Road Start",     type: "road",   len:  6000 * M, hill: 18, low: 7, rough: 0.9, rf: 0.018, rollAmp: 4,  rollFreq: 0.00016, jumpAmp: 48,  jumpSpacing: 22 * M },
+    { name: "Alpine Climb",   type: "hill",   len: 14000 * M, hill: 34, low: 9, rough: 1.0, rf: 0.018, rollAmp: 8,  rollFreq: 0.00009, jumpAmp: 52,  jumpSpacing: 26 * M },
+    { name: "Fast Descent",   type: "road",   len: 10000 * M, hill: 16, low: 7, rough: 0.8, rf: 0.017, rollAmp: 8,  rollFreq: 0.00011, jumpAmp: 64,  jumpSpacing: 16 * M },
+    { name: "Rolling Hills",  type: "forest", len:  9000 * M, hill: 24, low: 9, rough: 1.2, rf: 0.022, rollAmp: 9,  rollFreq: 0.00020, jumpAmp: 60,  jumpSpacing: 15 * M },
+    { name: "Jump Line",      type: "gravel", len:  5000 * M, hill: 22, low: 9, rough: 1.4, rf: 0.026, rollAmp: 9,  rollFreq: 0.00024, jumpAmp: 122, jumpSpacing: 11 * M },
+    { name: "Highland Climb", type: "hill",   len: 12000 * M, hill: 36, low: 9, rough: 1.1, rf: 0.020, rollAmp: 8,  rollFreq: 0.00010, jumpAmp: 54,  jumpSpacing: 24 * M },
+    { name: "Long Descent",   type: "road",   len: 16000 * M, hill: 15, low: 6, rough: 0.8, rf: 0.017, rollAmp: 6,  rollFreq: 0.00009, jumpAmp: 66,  jumpSpacing: 15 * M },
+    { name: "Final Rollers",  type: "city",   len:  8000 * M, hill: 20, low: 8, rough: 1.0, rf: 0.020, rollAmp: 8,  rollFreq: 0.00022, jumpAmp: 60,  jumpSpacing: 16 * M },
+  ];
+  const ZONE_LOOP_LEN = ZONES.reduce((s, z) => s + z.len, 0);
+  const INITIAL_TRACK_START_X = -3200;
+  const INITIAL_TRACK_END_X = 9200;
+  const TRACK_PAD_AHEAD = 2200;
+
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const clamp01 = (v) => Math.max(0, Math.min(1, v));
+  function zoneAt(x) {                       // {p: params (blended), name}
+    const loopX = ((x % ZONE_LOOP_LEN) + ZONE_LOOP_LEN) % ZONE_LOOP_LEN;
+    let acc = 0, i = 0;
+    for (; i < ZONES.length - 1; i++) { if (loopX < acc + ZONES[i].len) break; acc += ZONES[i].len; }
+    const z = ZONES[i], localX = loopX - acc, next = ZONES[(i + 1) % ZONES.length];
+    const p = { hill: z.hill, low: z.low, rough: z.rough, rf: z.rf };
+    const trans = 260 * M;                   // about 260 m smooth transition between zones
+    if (z.len - localX < trans) {
+      const t = 1 - (z.len - localX) / trans, s = t * t * (3 - 2 * t);
+      p.hill = lerp(z.hill, next.hill, s); p.low = lerp(z.low, next.low, s);
+      p.rough = lerp(z.rough, next.rough, s); p.rf = lerp(z.rf, next.rf, s);
+    }
+    return { p, name: z.name, type: z.type, zone: z, localX, loopX };
+  }
+  // ----------------------------------------------------------------------
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const css = getComputedStyle(document.documentElement);
+  const THEME = {
+    skyTop: css.getPropertyValue("--sky-top").trim(),
+    skyMid: css.getPropertyValue("--sky-mid").trim(),
+    skyBot: css.getPropertyValue("--sky-bot").trim(),
+    terrainCity: css.getPropertyValue("--terrain-city").trim(),
+    terrainRoad: css.getPropertyValue("--terrain-road").trim(),
+    terrainGravel: css.getPropertyValue("--terrain-gravel").trim(),
+    terrainForest: css.getPropertyValue("--terrain-forest").trim(),
+    terrainHill: css.getPropertyValue("--terrain-hill").trim(),
+  };
+  let W = 0, H = 0, DPR = 1;
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    canvas.style.width = W + "px"; canvas.style.height = H + "px";
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  // --- Terrain height and value noise -----------------------------------
+  function frac(n) { return n - Math.floor(n); }
+  function hash(n) { return frac(Math.sin(n) * 43758.5453); }
+  function valueNoise(x) {
+    const i = Math.floor(x), f = x - i;
+    const u = f * f * (3 - 2 * f);                 // smoothstep
+    return (hash(i) * (1 - u) + hash(i + 1) * u) * 2 - 1;
+  }
+  const smooth01 = (t) => {
+    const c = Math.max(0, Math.min(1, t));
+    return c * c * (3 - 2 * c);
+  };
+  const band01 = (x, a, b, e = 260) => smooth01((x - a) / e) * (1 - smooth01((x - b) / e));
+  const pulse01 = (x, start, rise, flat, fall) => {
+    const up = smooth01((x - start) / rise);
+    const down = smooth01((x - (start + rise + flat)) / fall);
+    return up - down;
+  };
+  const BASE_Y = 400;                              // base level (larger y = lower)
+  function terrainHeight(x, opts) {
+    const o = opts || {};
+    const includeMicro = o.micro !== false;
+    const includeNano = o.nano !== false;
+    const includeJumps = o.jumps !== false;
+    const profileSimple = o.profileSimple === true;
+    const { p, zone, localX } = zoneAt(x);
+    let h = BASE_Y;
+    const smoothStart = smooth01((x - 700) / 2600); // extra-smooth opening stretch
+    const microMul = 0.16 + smoothStart * 0.84;
+
+    if (profileSimple) {
+      // A clear, long-line route for the HUD profile without too much wiggle.
+      h += valueNoise(x * 0.000045 + 4.2) * 112;
+      h += valueNoise(x * 0.000085 + 11.4) * 58;
+      const zoneT = (localX / Math.max(1, zone.len)) - 0.5;
+      const zoneSlope = zone.type === "hill" ? -52 : zone.type === "road" ? 14 : zone.type === "gravel" ? 22 : zone.type === "forest" ? 10 : 8;
+      h += zoneSlope * zoneT;
+    } else {
+      // Macro profile: long, more natural climbs/descents without an overly regular sine pattern.
+      h += valueNoise(x * 0.000065 + 4.2) * 165;
+      h += valueNoise(x * 0.000145 + 11.4) * 92;
+      h += Math.sin((x - 2800) * 0.00011) * 52;
+
+      // The zone's own long undulation.
+      h += Math.sin(localX * zone.rollFreq + 0.6) * zone.rollAmp;
+
+      // Mid-scale variation that makes the terrain lively without jaggedness.
+      h += Math.sin(x * 0.00105 + 0.55) * (p.hill * 0.20);
+      h += Math.sin(x * 0.0022 + 1.25) * (p.low * 0.24) * microMul;
+      h += valueNoise(x * 0.0028 + 2.0) * (p.low * 0.17) * microMul;
+    }
+
+    if (includeMicro) {
+      // Lower-frequency, smaller micro-roughness so the rigid wheels don't nano-bounce.
+      h += valueNoise(x * p.rf * 0.34 + 5.1) * (p.rough * 0.09) * microMul;
+    }
+
+    // Rare surprise spots: dip cluster, pothole, kicker, or a bigger jump.
+    if (includeNano) {
+      h += surpriseTerrainDelta(x, p.rough);
+    }
+
+    // Proper jump sections in selected zones.
+    if (includeJumps && zone.jumpAmp > 0 && zone.jumpSpacing > 0) {
+      const leadIn = Math.min(zone.len * 0.10, 220 * M);
+      const leadOut = Math.min(zone.len * 0.10, 200 * M);
+      const edgeSoft = Math.min(zone.len * 0.06, 90 * M);
+      const jumpBand = band01(localX, leadIn, zone.len - leadOut, edgeSoft);
+      const jx = ((localX % zone.jumpSpacing) + zone.jumpSpacing) % zone.jumpSpacing;
+      // Kicker: snappy rising ramp (~130 px) -> sharp lip that launches into the air
+      const jUp = smooth01(jx / 130);
+      const jLip = smooth01((jx - 130) / 56);
+      h -= zone.jumpAmp * (jUp - jLip) * jumpBand;
+      // softer landing bump a bit after the lip
+      h += zone.jumpAmp * 0.22 * pulse01(jx, 320, 100, 80, 220) * jumpBand;
+    }
+
+    const flatEnd = 460;                           // force a flat, smooth start
+    if (x < flatEnd) {
+      const s = smooth01((x - 140) / (flatEnd - 140));
+      h = BASE_Y + (h - BASE_Y) * s;
+    }
+    return h;
+  }
+
+  function surpriseTerrainDelta(x, roughness) {
+    const xm = x / M;
+    const chunkM = 2200; // surprises only every few kilometers
+    const chunk = Math.floor(xm / chunkM);
+    const pulse = (d, hw) => {
+      const ad = Math.abs(d);
+      if (ad > hw) return 0;
+      const t = ad / Math.max(0.001, hw);
+      return (1 + Math.cos(Math.PI * t)) * 0.5;
+    };
+
+    let yDelta = 0;
+    for (let c = chunk - 1; c <= chunk + 1; c++) {
+      const base = c * 157.17 + 12.3;
+      const activeRoll = hash(base + 0.17);
+      if (activeRoll > 0.36) continue; // rarely active surprise chunk
+
+      const eventCount = activeRoll < 0.09 ? 2 : 1;
+      for (let i = 0; i < eventCount; i++) {
+        const seed = base + i * 19.31;
+        const typeRoll = hash(seed + 1.4);
+        const centerM = c * chunkM + 170 + hash(seed + 2.2) * (chunkM - 340);
+        const local = xm - centerM;
+        const ampMul = 0.82 + roughness * 0.30;
+
+        if (typeRoll < 0.30) {
+          // Dip cluster
+          const n = 3 + Math.floor(hash(seed + 3.8) * 3); // 3..5
+          const spacingM = 0.95 + hash(seed + 4.6) * 1.35;
+          const depthM = (0.05 + hash(seed + 5.3) * 0.08) * ampMul;
+          const hwM = 0.55 + hash(seed + 6.1) * 0.85;
+          for (let j = 0; j < n; j++) {
+            const jitter = (hash(seed + 8.0 + j) - 0.5) * 0.4;
+            const offset = (j - (n - 1) * 0.5) * spacingM + jitter;
+            yDelta += depthM * M * pulse(local - offset, hwM);
+          }
+        } else if (typeRoll < 0.58) {
+          // Single pothole
+          const depthM = (0.08 + hash(seed + 7.0) * 0.12) * ampMul;
+          const hwM = 1.0 + hash(seed + 7.8) * 1.4;
+          yDelta += depthM * M * pulse(local, hwM);
+        } else if (typeRoll < 0.84) {
+          // Kicker: small dip + fairly sharp rise
+          const dipM = (0.05 + hash(seed + 8.7) * 0.08) * ampMul;
+          const kickM = (0.07 + hash(seed + 9.4) * 0.10) * ampMul;
+          yDelta += dipM * M * pulse(local + 0.9, 1.1);
+          yDelta -= kickM * M * pulse(local - 0.25, 0.75);
+        } else {
+          // Bigger jump: takeoff, small "gap" and landing area
+          const takeoffM = (0.13 + hash(seed + 10.2) * 0.16) * ampMul;
+          const gapM = (0.09 + hash(seed + 11.1) * 0.12) * ampMul;
+          const landM = (0.07 + hash(seed + 11.9) * 0.12) * ampMul;
+          yDelta += gapM * M * pulse(local + 0.9, 1.25);
+          yDelta -= takeoffM * M * pulse(local - 0.15, 0.95);
+          yDelta -= landM * M * pulse(local - 2.2, 1.4);
+        }
+      }
+    }
+    return yDelta;
+  }
+
+  // Roadside decorations by zone type (deterministic, hash-seeded)
+  function buildDeco() {
+    deco = [];
+  }
+
+  // --- Game state -------------------------------------------------------
+  let engine, world;
+  let groundPts = [];           // {x,y} terrain top-surface points
+  let deco = [];                // roadside decorations {x, kind, v}
+  let rear, front, chassis;     // bike bodies
+  let facing = 1;               // 1 = right, -1 = left
+  let state = "play";           // "play" | "crash" | "win"
+  let endT = 0;
+  let moveStartT = 0;
+  let timerStarted = false;
+  let groundBuiltUntilX = 0;
+  let groundStartX = 0;
+  let finishX = 0;
+  let spawnX = 0;
+  // DEV: ?dev = short test track + intro skip
+  const devMode = new URLSearchParams(location.search).has("dev");
+  const skipIntro = devMode;
+  const LEVEL_LENGTH_M = devMode ? 50 : 80000;
+  let introVisible = !skipIntro;
+  const LEVEL_ID = devMode ? "track-1-dev-50m" : "track-1-80km"; // best time stored per level
+  const bestKey = "cm_best_" + LEVEL_ID;
+  let best = parseFloat(localStorage.getItem(bestKey)) || null;
+  let newRecord = false;
+  let collectibles = [];
+  let collectiblePlanXs = [];
+  let collectiblePlanIdx = 0;
+  let miniProfile = [];
+  let miniProfileMinY = 0;
+  let miniProfileMaxY = 1;
+  let routeProfileCanvas = null;
+  let routeProfileCtx = null;
+  let collectedCount = 0;
+  const keys = Object.create(null);
+  let cadence = 0;             // normalized cadence 0..1 (for audio)
+  let cadenceRpm = 0;          // natural cadence rpm (revs/min)
+  let crankAngle = 0;          // crank angle
+  let crankVel = 0;            // crank angular velocity (rad/frame, smoothed)
+  let climbResist = 1;         // 1 = flat, <1 = steep climb (harder to pedal)
+  let lastRealWheelieMs = -1e9; // timestamp of last genuine player wheelie (lean + pedal combo)
+  let legCrankVel = 0;         // visual crank speed (incl. coasting follow-through)
+  let crankAccum = 0;          // crank rotation accumulated during the frame
+  let pedalPulse = 0;          // visual pulse of the impulse
+  let leanHoldL = 0;
+  let leanHoldR = 0;
+  let wheelSpeedKph = 0;
+  let tripMeters = 0;
+  let lastRearAngle = 0;
+  let driveMomentum = 0;
+  let rollBurst = 0;
+  let lastScrollMs = 0;
+  let frontFootDir = { x: 1, y: 0.08 };
+  let rearFootDir = { x: 1, y: 0.08 };
+  // Parcel bundles these and returns the correct URL (works in dev + build). Must be
+  // static literals so Parcel can detect them.
+  const ASSET = {
+    radler:    new URL("./radler.png", import.meta.url).href,
+    burger:    new URL("./burger.png", import.meta.url).href,
+    pickup:    new URL("./radler-pickup.mp3", import.meta.url).href,
+    burgerEat: new URL("./burger-eat.mp3", import.meta.url).href,
+    win:       new URL("./win.mp3", import.meta.url).href,
+    crash: [
+      new URL("./crash-1.mp3", import.meta.url).href,
+      new URL("./crash-2.mp3", import.meta.url).href,
+      new URL("./crash-3.mp3", import.meta.url).href,
+      new URL("./crash-4.mp3", import.meta.url).href,
+      new URL("./crash-5.mp3", import.meta.url).href,
+      new URL("./crash-6.mp3", import.meta.url).href,
+    ],
+  };
+  const sprites = {
+    radler: loadImage(ASSET.radler),
+    burger: loadImage(ASSET.burger),
+  };
+  const pickupSfx = loadSfx(ASSET.pickup, 0.42);    // radler pickup
+  const burgerSfx = loadSfx(ASSET.burgerEat, 0.9);  // finish: eating the burger
+  const winSfx = loadSfx(ASSET.win, 0.9);           // special-reward jingle
+  const crashSfx = ASSET.crash.map((u) => loadSfx(u, 1.0)); // random pain sounds
+  let pickupBuf = null;
+  let pickupInit = false;
+  let burgerBuf = null;
+  let burgerInit = false;
+  const extraBuf = {};          // crash1..6, win -> AudioBuffer (reliable WebAudio playback)
+  let extraInit = false;
+  let burgerFade = 0;
+
+  function loadImage(url) {
+    const img = new Image();
+    img.src = url;
+    return img;
+  }
+
+  function loadSfx(url, volume = 1) {
+    const a = new Audio();
+    a.preload = "auto";
+    a.volume = volume;
+    a.src = url;
+    return a;
+  }
+
+  function playRadlerPickup() {
+    if (muted) return;
+    ensureAudio();
+
+    // Primarily a WebAudio buffer: works reliably for repeated hits.
+    if (actx && pickupBuf) {
+      try {
+        const src = actx.createBufferSource();
+        src.buffer = pickupBuf;
+        const g = actx.createGain();
+        g.gain.value = 0.9;
+        src.connect(g);
+        g.connect(actx.destination);
+        src.start();
+        return;
+      } catch (_) {}
+    }
+
+    // Secondarily an HTMLAudio element.
+    try {
+      pickupSfx.currentTime = 0;
+      pickupSfx.volume = 0.9;
+      const p = pickupSfx.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+      return;
+    } catch (_) {}
+
+    // Last fallback: a short beep so the hit is definitely audible.
+    if (actx) {
+      const t = actx.currentTime;
+      const o = actx.createOscillator();
+      const g = actx.createGain();
+      o.type = "triangle";
+      o.frequency.setValueAtTime(820, t);
+      o.frequency.exponentialRampToValueAtTime(560, t + 0.06);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.12, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+      o.connect(g);
+      g.connect(actx.destination);
+      o.start(t);
+      o.stop(t + 0.085);
+    }
+  }
+
+  function playBurgerEat() {
+    if (muted) return;
+    ensureAudio();
+
+    if (actx && burgerBuf) {
+      try {
+        const src = actx.createBufferSource();
+        src.buffer = burgerBuf;
+        const g = actx.createGain();
+        g.gain.value = 0.95;
+        src.connect(g);
+        g.connect(actx.destination);
+        src.start();
+        return;
+      } catch (_) {}
+    }
+
+    try {
+      burgerSfx.currentTime = 0;
+      burgerSfx.volume = 0.95;
+      const p = burgerSfx.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    } catch (_) {}
+  }
+
+  function playBuffer(buf, vol) {
+    if (!actx || !buf) return false;
+    try {
+      const src = actx.createBufferSource();
+      src.buffer = buf;
+      const g = actx.createGain();
+      g.gain.value = vol;
+      src.connect(g);
+      g.connect(actx.destination);
+      src.start();
+      return true;
+    } catch (_) { return false; }
+  }
+
+  function playHtmlSfx(a, vol) {
+    if (!a) return;
+    try {
+      a.currentTime = 0;
+      a.volume = vol;
+      const p = a.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    } catch (_) {}
+  }
+
+  function playCrash() {
+    if (muted) return;
+    ensureAudio();
+    const n = Math.floor(Math.random() * 6);                 // random pain sound
+    if (playBuffer(extraBuf["crash" + n], 1.0)) return;
+    playHtmlSfx(crashSfx[n], 1.0);                            // fallback
+  }
+
+  function playWin() {
+    if (muted) return;
+    ensureAudio();
+    if (playBuffer(extraBuf.win, 0.9)) return;
+    playHtmlSfx(winSfx, 0.9);                                 // fallback
+  }
+
+  function loadExtraBuffer(key, url) {
+    if (!actx || extraBuf[key] !== undefined) return;
+    extraBuf[key] = null;                                     // reserve the slot (loading)
+    fetchDecode(url, (buf) => { extraBuf[key] = buf; });
+  }
+
+  function initExtraBuffers() {
+    if (extraInit || !actx) return;
+    extraInit = true;
+    for (let n = 0; n < 6; n++) loadExtraBuffer("crash" + n, ASSET.crash[n]);
+    loadExtraBuffer("win", ASSET.win);
+  }
+
+  function fetchDecode(url, onBuf) {
+    fetch(url)
+      .then((r) => { if (!r.ok) throw new Error("fetch failed"); return r.arrayBuffer(); })
+      .then((ab) => actx.decodeAudioData(ab.slice(0)))
+      .then((buf) => onBuf(buf))
+      .catch(() => {});
+  }
+
+  function initPickupBuffer() {
+    if (pickupInit || !actx) return;
+    pickupInit = true;
+    fetchDecode(ASSET.pickup, (buf) => { pickupBuf = buf; });
+  }
+
+  function initBurgerBuffer() {
+    if (burgerInit || !actx) return;
+    burgerInit = true;
+    fetchDecode(ASSET.burgerEat, (buf) => { burgerBuf = buf; });
+  }
+
+  function rotPoint(body, lx, ly) {            // body local point -> world
+    const c = Math.cos(body.angle), s = Math.sin(body.angle);
+    return { x: body.position.x + lx * c - ly * s, y: body.position.y + lx * s + ly * c };
+  }
+  function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+  // Attaches the wheel to the chassis as a rigid axle (no give).
+  function pinWheel(ax1, ay1, ax2, ay2, wheel) {
+    Composite.add(world, Constraint.create({
+      bodyA: chassis,
+      pointA: { x: ax1, y: ay1 },
+      bodyB: wheel,
+      pointB: { x: 0, y: 0 },
+      length: 0,
+      stiffness: 1,
+      damping: 0,
+      render: { visible: false },
+    }));
+  }
+
+  function addGroundSlab(a, b) {
+    const thick = 60;
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len = Math.hypot(dx, dy);
+    const ang = Math.atan2(dy, dx);
+    const nx = -Math.sin(ang), ny = Math.cos(ang);   // downward normal
+    const cx = (a.x + b.x) / 2 + nx * thick / 2;
+    const cy = (a.y + b.y) / 2 + ny * thick / 2;
+    const slab = Bodies.rectangle(cx, cy, len + 2, thick, {
+      isStatic: true, angle: ang, friction: 1, label: "ground", chamfer: { radius: 2 },
+    });
+    Composite.add(world, slab);
+  }
+
+  function appendGroundUntil(targetX) {
+    if (!groundPts.length) {
+      groundStartX = INITIAL_TRACK_START_X;
+      groundPts.push({ x: groundStartX, y: terrainHeight(groundStartX) });
+      groundBuiltUntilX = groundStartX;
+    }
+    while (groundBuiltUntilX < targetX) {
+      const ax = groundBuiltUntilX;
+      const bx = ax + CFG.seg;
+      const a = groundPts[groundPts.length - 1];
+      const b = { x: bx, y: terrainHeight(bx) };
+      groundPts.push(b);
+      addGroundSlab(a, b);
+      groundBuiltUntilX = bx;
+    }
+  }
+
+  function buildWorld() {
+    engine = Engine.create();
+    world = engine.world;
+    engine.world.gravity.y = CFG.gravity;
+    engine.positionIterations = 12;
+    engine.velocityIterations = 12;
+    engine.constraintIterations = 12;            // more iterations -> constraints stay stiffer
+
+    // Terrain: points + static segment slabs following the slope
+    groundPts = [];
+    groundStartX = INITIAL_TRACK_START_X;
+    groundBuiltUntilX = groundStartX;
+    appendGroundUntil(INITIAL_TRACK_END_X);
+    buildDeco();
+
+    // Bike: two wheels + chassis, own collision group (no self-collision)
+    const grp = Body.nextGroup(true);
+    const filter = { group: grp };
+    const sx = 120;
+    const sy = terrainHeight(sx) - 70;
+    const wb = CFG.wheelbase, r = CFG.wheelR;
+
+    rear = Bodies.circle(sx - wb / 2, sy, r, {
+      friction: 1, frictionStatic: 4, restitution: 0.0, density: 0.0022,
+      frictionAir: CFG.airDrag, collisionFilter: filter, label: "wheel",
+    });
+    front = Bodies.circle(sx + wb / 2, sy, r, {
+      friction: 1, frictionStatic: 4, restitution: 0.0, density: 0.0016,
+      frictionAir: CFG.airDrag, collisionFilter: filter, label: "wheel",
+    });
+    chassis = Bodies.rectangle(sx, sy - 16, 56, 8, {
+      density: 0.0016, frictionAir: CFG.airDrag, collisionFilter: filter, label: "chassis",
+    });
+    Composite.add(world, [rear, front, chassis]);
+
+    // Rigid axle mounts: wheel center fixed to a chassis point
+    pinWheel(-wb / 2, 16, 0, 0, rear);
+    pinWheel( wb / 2, 16, 0, 0, front);
+
+    // Crash happens ONLY from the head hitting -> checked geometrically in the loop.
+    // Chassis and wheels may touch the ground freely (like in Elastomania).
+    spawnX = sx;
+    finishX = spawnX + LEVEL_LENGTH_M * pxPerMeter();
+    buildMiniProfile();
+    buildCollectibles();
+    tripMeters = 0;
+    lastRearAngle = rear.angle;
+    facing = 1;
+    frontFootDir = { x: 1, y: 0.08 };
+    rearFootDir = { x: 1, y: 0.08 };
+    state = "play";
+    endT = 0;
+    moveStartT = 0;
+    timerStarted = false;
+    collectedCount = 0;
+  }
+
+  function buildMiniProfile() {
+    // Esilasketaan ala-HUD:n profiili, tarkoituksella yksinkertaistettuna.
+    const samples = devMode ? 90 : 180;
+    miniProfile = [];
+    miniProfileMinY = Infinity;
+    miniProfileMaxY = -Infinity;
+
+    const len = Math.max(1, finishX - spawnX);
+    for (let i = 0; i < samples; i++) {
+      const t = samples <= 1 ? 0 : (i / (samples - 1));
+      const x = spawnX + len * t;
+      const y = terrainHeight(x, { micro: false, nano: false, jumps: false, profileSimple: true });
+      miniProfile.push({ t, y });
+      if (y < miniProfileMinY) miniProfileMinY = y;
+      if (y > miniProfileMaxY) miniProfileMaxY = y;
+    }
+
+    if (!isFinite(miniProfileMinY) || !isFinite(miniProfileMaxY) || miniProfileMaxY <= miniProfileMinY) {
+      miniProfileMinY = 0;
+      miniProfileMaxY = 1;
+    }
+  }
+
+  function buildCollectibles() {
+    collectibles = [];
+    collectiblePlanXs = [];
+    collectiblePlanIdx = 0;
+
+    const points = [];
+    if (devMode) {
+      points.push(spawnX + 150, spawnX + 290, spawnX + 430);
+    } else {
+      const startX = spawnX + 1200;
+      const endX = finishX - 700;
+      const total = 24;
+      for (let i = 0; i < total; i++) {
+        const t = i / (total - 1);
+        const baseX = startX + (endX - startX) * t;
+        const jitter = (hash(i * 37 + 11) * 2 - 1) * 560;
+        const x = Math.max(startX, Math.min(endX, baseX + jitter));
+        points.push(x);
+      }
+    }
+
+    points.sort((a, b) => a - b);
+    for (const x of points) {
+      if (collectiblePlanXs.some((px) => Math.abs(px - x) < 420)) continue;
+      collectiblePlanXs.push(x);
+    }
+
+    // Dev-modessa voidaan luoda kaikki heti; pitkassa kentassa spawnataan lahialueelle loopissa.
+    if (devMode) {
+      spawnCollectiblesAhead(spawnX + 2000);
+    } else {
+      spawnCollectiblesAhead(spawnX + 2600);
+    }
+  }
+
+  function spawnCollectiblesAhead(targetX) {
+    while (collectiblePlanIdx < collectiblePlanXs.length && collectiblePlanXs[collectiblePlanIdx] <= targetX) {
+      const x = collectiblePlanXs[collectiblePlanIdx++];
+      const yl = groundYAt(x - 90);
+      const yc = groundYAt(x);
+      const yr = groundYAt(x + 90);
+      const isDip = yc > yl + 8 && yc > yr + 8;
+      const isCrest = yc < yl - 9 && yc < yr - 9;
+      const yOff = isDip ? 44 : (isCrest ? 70 : 58);
+      collectibles.push({ x, y: yc - yOff, taken: false, fade: 0 });
+    }
+    collectibles.sort((a, b) => a.x - b.x);
+  }
+
+  // --- Terrain height at a given x (linear interpolation) -------
+  function groundYAt(x) {
+    appendGroundUntil(x + CFG.seg * 4);
+    const idx = Math.max(0, Math.min(groundPts.length - 2, Math.floor((x - groundStartX) / CFG.seg)));
+    const a = groundPts[idx], b = groundPts[idx + 1];
+    const t = (x - a.x) / (b.x - a.x);
+    return a.y + (b.y - a.y) * Math.max(0, Math.min(1, t));
+  }
+
+  // Rear drive: power reaches the road only when the rear wheel actually touches the ground.
+  function rearWheelGrounded() {
+    return !!rear && (rear.position.y + CFG.wheelR) >= (groundYAt(rear.position.x) - 3);
+  }
+  function frontWheelGrounded() {
+    return !!front && (front.position.y + CFG.wheelR) >= (groundYAt(front.position.x) - 3);
+  }
+  // Wheelie: rear on the ground, front in the air.
+  function isWheelie() {
+    return rearWheelGrounded() && !frontWheelGrounded();
+  }
+
+  function liftBikeAboveGround(clearance = 1.0) {
+    // Check the bike's and rider's critical points relative to the ground.
+    const head = rotPoint(chassis, 8, -36);
+    const hip = rotPoint(chassis, -12.8, -20.2);
+    const shoulder = rotPoint(chassis, 15, -45);
+    const hand = rotPoint(chassis, 28, -18);
+    const bb = rotPoint(chassis, -4, 15);
+    const frontFork = rotPoint(chassis, 24, -5);
+
+    const samples = [head, hip, shoulder, hand, bb, frontFork];
+    let maxPenetration = 0;
+    for (const p of samples) {
+      const pen = p.y - (groundYAt(p.x) - clearance);
+      if (pen > maxPenetration) maxPenetration = pen;
+    }
+
+    const rearPen = rear.position.y + CFG.wheelR - (groundYAt(rear.position.x) - 0.2);
+    const frontPen = front.position.y + CFG.wheelR - (groundYAt(front.position.x) - 0.2);
+    if (rearPen > maxPenetration) maxPenetration = rearPen;
+    if (frontPen > maxPenetration) maxPenetration = frontPen;
+
+    if (maxPenetration > 0) {
+      const lift = maxPenetration + 0.8;
+      Body.setPosition(rear, { x: rear.position.x, y: rear.position.y - lift });
+      Body.setPosition(front, { x: front.position.x, y: front.position.y - lift });
+      Body.setPosition(chassis, { x: chassis.position.x, y: chassis.position.y - lift });
+    }
+  }
+
+  function freezeBikeOnCrash() {
+    // Clean up any penetration before stopping.
+    for (let i = 0; i < 3; i++) liftBikeAboveGround(1.2);
+
+    Body.setVelocity(rear, { x: 0, y: 0 });
+    Body.setVelocity(front, { x: 0, y: 0 });
+    Body.setVelocity(chassis, { x: 0, y: 0 });
+    Body.setAngularVelocity(rear, 0);
+    Body.setAngularVelocity(front, 0);
+    Body.setAngularVelocity(chassis, 0);
+
+    Body.setStatic(rear, true);
+    Body.setStatic(front, true);
+    Body.setStatic(chassis, true);
+  }
+
+  function crash() {
+    if (state === "play") {
+      state = "crash";
+      endT = performance.now();
+      freezeBikeOnCrash();
+      playCrash();
+      showOverlay();
+    }
+  }
+  function win() {
+    if (state !== "play") return;
+    state = "win"; endT = performance.now();
+    burgerFade = 1;
+    playBurgerEat();
+    const t = currentRunMs(endT) / 1000;
+    newRecord = (best === null || t < best);
+    if (newRecord) { best = t; localStorage.setItem(bestKey, String(best)); }
+    showOverlay();
+  }
+
+  function reset() {
+    Events.off(engine);
+    Composite.clear(world, false);
+    Engine.clear(engine);
+    cam.x = 0; cam.y = 0; cam.zoom = 1; cam.init = false; cam.vX = 0; cam.leadX = 0;
+    cadence = 0; cadenceRpm = 0; crankAngle = 0; crankVel = 0; legCrankVel = 0; crankAccum = 0; pedalPulse = 0;
+    driveMomentum = 0;
+    rollBurst = 0;
+    lastScrollMs = 0;
+    tripMeters = 0;
+    lastRearAngle = rear ? rear.angle : 0;
+    burgerFade = 0;
+    buildWorld();
+    overlay.classList.remove("show");
+  }
+
+  function currentRunMs(now) {
+    if (!timerStarted || moveStartT <= 0) return 0;
+    return Math.max(0, now - moveStartT);
+  }
+
+  function maybeStartTimer(now) {
+    if (timerStarted || state !== "play") return;
+    if (Math.abs(chassis.position.x - spawnX) > 8) {
+      timerStarted = true;
+      moveStartT = now;
+    }
+  }
+
+  function startFromIntro() {
+    if (!introVisible) return;
+    introVisible = false;
+    $("intro").classList.add("hide");
+    last = performance.now();
+  }
+
+  function controlKeyFromEvent(e) {
+    const code = e.code || "";
+    if (code === "KeyA") return "a";
+    if (code === "KeyS") return "s";
+    if (code === "KeyD") return "d";
+    if (code === "KeyR") return "r";
+    if (code === "KeyM") return "m";
+    if (code === "Space") return " ";
+    if (code === "ArrowUp") return "arrowup";
+    if (code === "ArrowDown") return "arrowdown";
+    if (code === "ArrowLeft") return "arrowleft";
+    if (code === "ArrowRight") return "arrowright";
+    return (e.key || "").toLowerCase();
+  }
+
+  function setMuted(nextMuted) {
+    muted = !!nextMuted;
+    if (!muted) unlockAudio();
+    const tgl = document.getElementById("soundToggle");
+    if (tgl) tgl.checked = !muted;
+  }
+
+  const DEFAULT_MUTED = false;
+
+  // --- Input ------------------------------------------------------------
+  window.addEventListener("keydown", (e) => {
+    const k = controlKeyFromEvent(e);
+    if (["a", "s", "d", " ", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) e.preventDefault();
+    unlockAudio();
+    startFromIntro();
+    if (k === "r") { reset(); return; }
+    if (k === "m") { setMuted(!muted); return; }
+    // Direction flip removed for now.
+    keys[k] = true;
+  });
+  window.addEventListener("keyup", (e) => { keys[controlKeyFromEvent(e)] = false; });
+  window.addEventListener("pointerdown", () => { unlockAudio(); startFromIntro(); });
+  window.addEventListener("mousedown", unlockAudio, { passive: true });
+  window.addEventListener("touchstart", unlockAudio, { passive: true });
+  const soundToggle = document.getElementById("soundToggle");
+  if (soundToggle) {
+    soundToggle.checked = !DEFAULT_MUTED;
+    soundToggle.addEventListener("change", () => {
+      if (soundToggle.checked) unlockAudio();
+      setMuted(!soundToggle.checked);
+    });
+  }
+
+  // --- Audio: light pedal click + terrain/freewheel -------------------
+  let actx = null, muted = DEFAULT_MUTED;
+  let audioReady = false;
+  let terrainNoise = null, terrainFilter = null, terrainGain = null;
+  let freewheelTickAccum = 0;
+  let rollingGainSmoothed = 0;
+
+  function unlockAudio() {
+    ensureAudio();
+    if (actx && actx.state === "running") audioReady = true;
+  }
+
+  function ensureAudio() {
+    if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } }
+    if (actx && actx.state === "suspended") {
+      actx.resume().then(() => { audioReady = true; }).catch(() => {});
+    }
+    if (actx && actx.state === "running") audioReady = true;
+    if (actx) initPickupBuffer();
+    if (actx) initBurgerBuffer();
+    if (actx) initExtraBuffers();
+    if (!actx || terrainNoise) return;
+
+    const noiseLen = actx.sampleRate * 2;
+    const noiseBuf = actx.createBuffer(1, noiseLen, actx.sampleRate);
+    const data = noiseBuf.getChannelData(0);
+    for (let i = 0; i < noiseLen; i++) data[i] = Math.random() * 2 - 1;
+
+    terrainNoise = actx.createBufferSource();
+    terrainNoise.buffer = noiseBuf;
+    terrainNoise.loop = true;
+    terrainFilter = actx.createBiquadFilter();
+    terrainFilter.type = "bandpass";
+    terrainFilter.frequency.value = 420;
+    terrainFilter.Q.value = 0.8;
+    terrainGain = actx.createGain();
+    terrainGain.gain.value = 0.0001;
+    terrainNoise.connect(terrainFilter);
+    terrainFilter.connect(terrainGain);
+    terrainGain.connect(actx.destination);
+    terrainNoise.start();
+
+  }
+  function tick(strength) {
+    if (muted || !actx) return;
+    const t = actx.currentTime;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = "triangle";
+    o.frequency.value = (190 + cadence * 320) * (0.92 + Math.random() * 0.16);  // harder pedaling -> higher pitch
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.min(0.07, 0.015 + strength * 0.05), t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.085);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + 0.09);
+  }
+
+  function freewheelTick(strength) {
+    if (muted || !actx) return;
+    const t = actx.currentTime;
+
+    const o = actx.createOscillator();
+    const o2 = actx.createOscillator();
+    const hp = actx.createBiquadFilter();
+    const g = actx.createGain();
+
+    o.type = "square";
+    o.frequency.setValueAtTime(1700 + Math.random() * 480, t);
+    o.frequency.exponentialRampToValueAtTime(1020 + Math.random() * 280, t + 0.010);
+    // A light double-click makes the hub sound more natural.
+    o2.type = "triangle";
+    o2.frequency.setValueAtTime(1420 + Math.random() * 280, t + 0.0022);
+    o2.frequency.exponentialRampToValueAtTime(880 + Math.random() * 180, t + 0.010);
+
+    hp.type = "highpass";
+    hp.frequency.value = 980;
+    hp.Q.value = 1.1;
+
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.min(0.032, 0.006 + strength * 0.020), t + 0.0015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.016);
+
+    o.connect(hp);
+    o2.connect(hp);
+    hp.connect(g);
+    g.connect(actx.destination);
+    o.start(t);
+    o2.start(t + 0.0022);
+    o.stop(t + 0.018);
+    o2.stop(t + 0.014);
+  }
+
+  // Mouse wheel = pedal stroke. Each notch = a separate impulse.
+  window.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    startFromIntro();
+    if (state !== "play") return;
+    unlockAudio();
+    const wheelDelta = Math.abs(e.deltaY);
+    // A long scroll is interpreted as several strokes (max 10).
+    const strokeCount = Math.max(1, Math.min(10, 1 + Math.floor(Math.min(1, wheelDelta / 900) * 9)));
+    pedalStroke(Math.min(wheelDelta, 220), strokeCount);
+  }, { passive: false });
+
+  function pedalStroke(d, strokeCount = 1) {
+    const nowMs = performance.now();
+    const dtMs = lastScrollMs > 0 ? nowMs - lastScrollMs : 120;
+    lastScrollMs = nowMs;
+
+    const raw = d / 100;
+    const cadenceBoost = dtMs < CFG.scrollFastMs ? (CFG.scrollFastMs - dtMs) / CFG.scrollFastMs : 0;
+    const rearOnGround = rearWheelGrounded();   // rear drive: only when the rear wheel is on the ground
+    const grip = rearOnGround ? CFG.groundInputScale : CFG.airInputScale;
+    const s = Math.pow(Math.max(0.08, raw), 0.86) * grip;
+    const strokes = Math.max(1, Math.min(10, strokeCount | 0));
+    const strokeMul = 1 + (strokes - 1) * 0.48;
+    crankAccum += s * strokeMul * CFG.crankStep;         // cranks turn by the amount of scrolling
+
+    // Power transmission only when the rear wheel is on the ground (rear drive).
+    if (rearOnGround) {
+      // Slow scroll -> slow strolling start.
+      const dir = facing >= 0 ? 1 : -1;
+      const strollMul = 1 - cadenceBoost * 0.65;
+      const strollTarget = rear.angularVelocity + dir * s * CFG.strollKick * strollMul * strokeMul * climbResist;
+      const strollCap = Math.min(CFG.strollMax, CFG.pedalMax * 0.48);
+      const strollClamped = dir > 0
+        ? Math.min(strollTarget, strollCap)
+        : Math.max(strollTarget, -strollCap);
+      Body.setAngularVelocity(rear, strollClamped);
+
+      // Fast consecutive scrolling increases burst and momentum buildup.
+      rollBurst = Math.min(1, rollBurst * 0.72 + cadenceBoost * CFG.burstRise + Math.min(0.72, s * 0.08 + (strokes - 1) * 0.06));
+      const burstMul = 1 + rollBurst * (CFG.burstBoostMax - 1);
+
+      // The pedal effect accumulates as momentum: a more bike-like start + carrying coast.
+      const perStrokeMomentum = Math.min(CFG.inputStepMax, s * CFG.scrollKick * burstMul * climbResist);
+      for (let i = 0; i < strokes; i++) {
+        driveMomentum = Math.min(CFG.scrollKickMax, driveMomentum + perStrokeMomentum);
+      }
+    }
+
+    pedalPulse = 1;
+    tick(Math.min(1, s * (0.9 + strokes * 0.07)));
+  }
+
+  function applyControls() {
+    if (state !== "play") return;
+    if (keys["s"] || keys["arrowdown"]) {               // brake on both wheels
+      Body.setAngularVelocity(rear,  rear.angularVelocity  * CFG.brake);
+      Body.setAngularVelocity(front, front.angularVelocity * CFG.brake);
+    }
+    const leftArrow = !!keys["arrowleft"];
+    const rightArrow = !!keys["arrowright"];
+    const leftPressed = !!(keys["a"] || leftArrow);
+    const rightPressed = !!(keys["d"] || rightArrow);
+    leanHoldL = leftPressed ? Math.min(CFG.leanRampMs, leanHoldL + 16.7) : Math.max(0, leanHoldL - 30);
+    leanHoldR = rightPressed ? Math.min(CFG.leanRampMs, leanHoldR + 16.7) : Math.max(0, leanHoldR - 30);
+
+    if (leftPressed) {
+      const t = leanHoldL / CFG.leanRampMs;
+      const mul = 0.4 + t * (CFG.leanMaxMul - 0.4);
+      const boost = leftArrow ? CFG.arrowLeanBoost : 1;
+      // Wheelie: pedaling at the same time (cadence) speeds up the rotation.
+      const pedalBoost = 1 + cadence * CFG.wheeliePedalBoost;
+      Body.setAngularVelocity(chassis, chassis.angularVelocity - CFG.lean * mul * boost * pedalBoost);
+    }
+    if (rightPressed) {
+      const t = leanHoldR / CFG.leanRampMs;
+      const mul = 0.4 + t * (CFG.leanMaxMul - 0.4);
+      const boost = rightArrow ? CFG.arrowLeanBoost : 1;
+      Body.setAngularVelocity(chassis, chassis.angularVelocity + CFG.lean * mul * boost);
+    }
+  }
+
+  function flipDirection() {
+    // Only the rider turns and from now on you pedal the other way.
+    // Do NOT touch velocity or spin -> the chassis won't break and travel direction
+    // won't change as a velocity vector (you keep coasting until you brake and pedal the other way).
+    facing *= -1;
+    crankVel = 0;
+    crankAccum = 0;
+    driveMomentum = 0;
+    rollBurst = 0;
+  }
+
+  function updateRollingAudio(dtMs) {
+    if (!actx || !terrainGain) return;
+    if (actx.state === "suspended") {
+      actx.resume().then(() => { audioReady = true; }).catch(() => {});
+    }
+    if (muted || state !== "play") {
+      terrainGain.gain.setTargetAtTime(0.0001, actx.currentTime, 0.04);
+      freewheelTickAccum = 0;
+      rollingGainSmoothed = 0;
+      return;
+    }
+
+    const zoneType = zoneAt(chassis.position.x).type;
+    const terrainRough = zoneType === "road" ? 0.18 : zoneType === "city" ? 0.24 : zoneType === "gravel" ? 0.60 : zoneType === "forest" ? 0.48 : 0.38;
+    const rearGap = rear.position.y - groundYAt(rear.position.x);
+    const frontGap = front.position.y - groundYAt(front.position.x);
+    const nearGround = (rearGap > -14) || (frontGap > -14);
+    const baseRoll = Math.min(0.09, wheelSpeedKph / 90 * terrainRough * 0.11);
+    const rollTarget = nearGround ? baseRoll : Math.min(0.018, baseRoll * 0.28);
+    const rollLerp = nearGround ? 0.22 : 0.08;
+    rollingGainSmoothed += (rollTarget - rollingGainSmoothed) * rollLerp;
+    const rollGain = Math.max(0.0001, rollingGainSmoothed);
+    const freq = 180 + terrainRough * 560 + wheelSpeedKph * 3.2;
+    terrainFilter.frequency.setTargetAtTime(freq, actx.currentTime, 0.03);
+    terrainGain.gain.setTargetAtTime(rollGain, actx.currentTime, 0.04);
+
+    const freewheelOn = wheelSpeedKph > 3 && Math.abs(crankVel) < 0.050;
+    if (!freewheelOn) {
+      freewheelTickAccum = 0;
+      return;
+    }
+
+    const dtSec = Math.max(0.001, (dtMs || 16.7) / 1000);
+    const wheelRevPerSec = (wheelSpeedKph / 3.6) / Math.max(0.001, wheelCircumferenceM());
+    const clickHzRaw = wheelRevPerSec * (FREEWHEEL.hubTeeth / FREEWHEEL.audibleDiv);
+    const clickHz = Math.min(FREEWHEEL.maxHz, Math.max(FREEWHEEL.minHz, clickHzRaw));
+    const tickStrength = Math.min(1, 0.28 + wheelSpeedKph / 95);
+    freewheelTickAccum += dtSec * clickHz;
+    while (freewheelTickAccum >= 1) {
+      freewheelTick(tickStrength);
+      freewheelTickAccum -= 1;
+    }
+  }
+
+  // --- Camera -----------------------------------------------------------
+  const cam = { x: 0, y: 0, zoom: 1, init: false, vX: 0, leadX: 0 };
+  function updateCamera() {
+    const v = chassis.velocity;
+    const speed = Math.hypot(v.x, v.y);
+    cam.vX += (v.x - cam.vX) * 0.12;
+    const absVX = Math.abs(cam.vX);
+    const dir = absVX > 0.08 ? Math.sign(cam.vX) : facing;
+    const leadTarget = dir * Math.min(210, absVX * 14.0);
+    cam.leadX += (leadTarget - cam.leadX) * 0.08;
+
+    const bikeCenterX = (rear.position.x + front.position.x + chassis.position.x) / 3;
+    const tx = bikeCenterX + cam.leadX;
+    const ty = chassis.position.y - 34;
+    const tz = 1.0; // fixed zoom: no change with speed
+    if (!cam.init) { cam.x = tx; cam.y = ty; cam.zoom = tz; cam.init = true; }
+    cam.x += (tx - cam.x) * 0.12;
+    cam.y += (ty - cam.y) * 0.10;
+    cam.zoom += (tz - cam.zoom) * 0.035;
+  }
+
+  // --- Rendering -----------------------------------------------------------
+  function drawBackground() {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#8fbfe6");
+    g.addColorStop(0.6, "#b8d8f2");
+    g.addColorStop(1, "#dcecff");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function worldTransform() {
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.scale(cam.zoom, cam.zoom);
+    ctx.translate(-cam.x, -cam.y);
+  }
+
+  function drawTerrain() {
+    // visible x range -> draw only those segments
+    const half = (W / 2) / cam.zoom;
+    const x0 = cam.x - half - CFG.seg, x1 = cam.x + half + CFG.seg;
+    let i0 = Math.max(0, Math.floor((x0 - groundStartX) / CFG.seg));
+    let i1 = Math.min(groundPts.length - 1, Math.ceil((x1 - groundStartX) / CFG.seg));
+
+    ctx.beginPath();
+    ctx.moveTo(groundPts[i0].x, groundPts[i0].y);
+    for (let i = i0 + 1; i <= i1; i++) ctx.lineTo(groundPts[i].x, groundPts[i].y);
+    ctx.lineTo(groundPts[i1].x, cam.y + half + H);
+    ctx.lineTo(groundPts[i0].x, cam.y + half + H);
+    ctx.closePath();
+    ctx.fillStyle = "#1c2c1f"; ctx.fill();
+
+    // Road surface line removed by request.
+  }
+  function surfaceColor(type) {
+    switch (type) {
+      case "city":   return THEME.terrainCity;
+      case "road":   return THEME.terrainRoad;
+      case "gravel": return THEME.terrainGravel;
+      case "forest": return THEME.terrainForest;
+      case "hill":   return THEME.terrainHill;
+      default:       return "#5fd07a";
+    }
+  }
+
+  function drawFinish() {
+    const half = (W / 2) / cam.zoom;
+    const x0 = cam.x - half - 120;
+    const x1 = cam.x + half + 120;
+    if (finishX < x0 || finishX > x1) return;
+
+    const fy = groundYAt(finishX);
+    if (burgerFade > 0) {
+      const fadeNow = burgerFade;
+      burgerFade = Math.max(0, burgerFade - 0.05);
+      if (sprites.burger.complete && sprites.burger.naturalWidth > 0) {
+        const h = 64 * (0.9 + fadeNow * 0.22);
+        const w = h * (sprites.burger.naturalWidth / sprites.burger.naturalHeight);
+        ctx.save();
+        ctx.globalAlpha = fadeNow;
+        ctx.drawImage(sprites.burger, finishX - w * 0.5, fy - h - 6, w, h);
+        ctx.restore();
+      }
+      return;
+    }
+    if (state === "win") return;
+
+    if (sprites.burger.complete && sprites.burger.naturalWidth > 0) {
+      const h = 64, w = h * (sprites.burger.naturalWidth / sprites.burger.naturalHeight);
+      ctx.drawImage(sprites.burger, finishX - w * 0.5, fy - h - 6, w, h);
+      return;
+    }
+
+    ctx.fillStyle = "#f0b44c";
+    ctx.beginPath();
+    ctx.ellipse(finishX, fy - 26, 24, 14, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawMiniProfile() {
+    if (!miniProfile.length) return;
+
+    if (!routeProfileCanvas) {
+      routeProfileCanvas = $("routeProfile");
+      if (routeProfileCanvas) routeProfileCtx = routeProfileCanvas.getContext("2d");
+    }
+    if (!routeProfileCanvas || !routeProfileCtx) return;
+
+    const w = Math.max(80, Math.floor(routeProfileCanvas.clientWidth || 0));
+    const h = Math.max(12, Math.floor(routeProfileCanvas.clientHeight || 0));
+    if (routeProfileCanvas.width !== w || routeProfileCanvas.height !== h) {
+      routeProfileCanvas.width = w;
+      routeProfileCanvas.height = h;
+    }
+
+    const g = routeProfileCtx;
+    const padX = 6;
+    const padY = 2;
+    const plotW = Math.max(10, w - padX * 2);
+    const plotH = Math.max(6, h - padY * 2);
+    const yRange = Math.max(1, miniProfileMaxY - miniProfileMinY);
+
+    g.clearRect(0, 0, w, h);
+
+    g.strokeStyle = "rgba(255,255,255,0.22)";
+    g.lineWidth = 1;
+    g.beginPath();
+    for (let i = 0; i < miniProfile.length; i++) {
+      const p = miniProfile[i];
+      const px = padX + p.t * plotW;
+      const py = padY + ((p.y - miniProfileMinY) / yRange) * plotH;
+      if (i === 0) g.moveTo(px, py);
+      else g.lineTo(px, py);
+    }
+    g.stroke();
+
+    const progressT = Math.max(0, Math.min(1, (chassis.position.x - spawnX) / Math.max(1, finishX - spawnX)));
+    const markerX = padX + progressT * plotW;
+    g.strokeStyle = "rgba(255,255,255,0.78)";
+    g.lineWidth = 1.1;
+    g.beginPath();
+    g.moveTo(markerX, 1);
+    g.lineTo(markerX, h - 1);
+    g.stroke();
+  }
+
+  function drawCollectibles() {
+    const half = (W / 2) / cam.zoom;
+    const x0 = cam.x - half - 90, x1 = cam.x + half + 90;
+    const hasRadler = sprites.radler.complete && sprites.radler.naturalWidth > 0;
+    for (const c of collectibles) {
+      if (c.x < x0 || c.x > x1) continue;
+      if (c.taken && c.fade <= 0) continue;
+      const fade = c.taken ? c.fade : 1;
+      if (hasRadler) {
+        const h = 56 * (c.taken ? (0.88 + fade * 0.34) : 1);
+        const w = h * (sprites.radler.naturalWidth / sprites.radler.naturalHeight);
+        ctx.save();
+        ctx.globalAlpha = fade;
+        ctx.drawImage(sprites.radler, c.x - w / 2, c.y - h, w, h);
+        ctx.restore();
+      } else {
+        ctx.save();
+        ctx.globalAlpha = fade;
+        ctx.fillStyle = "#f5d35d";
+        ctx.beginPath();
+        ctx.arc(c.x, c.y - 24, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      if (c.taken && c.fade > 0) c.fade = Math.max(0, c.fade - 0.12);
+    }
+  }
+
+  function pickupCollectibles() {
+    const head = rotPoint(chassis, 8, -36);
+    const p0 = chassis.position;
+    for (const c of collectibles) {
+      if (c.taken) continue;
+      const d0 = Math.hypot(c.x - p0.x, c.y - p0.y);
+      const d1 = Math.hypot(c.x - head.x, c.y - head.y);
+      if (Math.min(d0, d1) < 24) {
+        c.taken = true;
+        c.fade = 1;
+        collectedCount += 1;
+        // Win jingle only when grabbed during a real player wheelie (lean + pedal combo
+        // at or just before the grab); otherwise the normal pickup sound.
+        if (performance.now() - lastRealWheelieMs < 350) playWin();
+        else playRadlerPickup();
+      }
+    }
+  }
+
+  // --- Roadside decorations ----------------------------------------------
+  function drawDeco() {
+    return;
+  }
+  function post(x, gy, top) {                       // post; returns the sign's center height
+    ctx.strokeStyle = "#9aa6b2"; ctx.lineWidth = 3; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x, gy - top); ctx.stroke();
+    return gy - top;
+  }
+  function triSign(x, cy, glyph) {                  // yellow warning triangle
+    const s = 15;
+    ctx.beginPath();
+    ctx.moveTo(x, cy - s); ctx.lineTo(x - s, cy + s * 0.85); ctx.lineTo(x + s, cy + s * 0.85); ctx.closePath();
+    ctx.fillStyle = "#ffd84d"; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = "#d6352b"; ctx.stroke();
+    ctx.fillStyle = "#111"; ctx.font = "bold 13px sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(glyph, x, cy + 4);
+  }
+  function drawDecoItem(kind, x, gy, v) {
+    switch (kind) {
+      case "tree": {
+        return;
+        break;
+      }
+      case "rock": {
+        const r = 6 + v * 11;
+        ctx.fillStyle = "#6a6f76";
+        ctx.beginPath();
+        ctx.moveTo(x - r, gy);
+        ctx.quadraticCurveTo(x - r, gy - r * 1.15, x, gy - r * 1.15);
+        ctx.quadraticCurveTo(x + r, gy - r * 1.15, x + r, gy);
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = "#7d838b";
+        ctx.beginPath(); ctx.ellipse(x - r * 0.3, gy - r * 0.7, r * 0.35, r * 0.25, 0, 0, Math.PI * 2); ctx.fill();
+        break;
+      }
+      case "lamp": {
+        return;
+        break;
+      }
+      case "light": {                              // traffic light
+        return;
+        break;
+      }
+      case "post": {                               // guide post / railing
+        return;
+        break;
+      }
+      case "sign:speed": {                         // speed limit
+        return;
+        break;
+      }
+      case "sign:stop": {                          // STOP sign
+        return;
+        break;
+      }
+      case "sign:warn":
+      case "sign:deer":
+      case "sign:steep":
+        return;
+    }
+  }
+
+  function drawWheel(wheel) {
+    ctx.save();
+    ctx.translate(wheel.position.x, wheel.position.y);
+    ctx.rotate(wheel.angle);
+    const r = CFG.wheelR;
+    // Tire + thin rim (spoke style)
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.lineWidth = 3.8; ctx.strokeStyle = "#0a0e14"; ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, r - 1.1, 0, Math.PI * 2);
+    ctx.lineWidth = 1.3; ctx.strokeStyle = "#d9c7a2"; ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, r - 2.5, 0, Math.PI * 2);
+    ctx.lineWidth = 1.8; ctx.strokeStyle = "#9ca7b4"; ctx.stroke();
+
+    // Spokes
+    const spokeCount = 24;
+    const spokeR = r - 2.8;
+    ctx.beginPath();
+    for (let i = 0; i < spokeCount; i++) {
+      const ang = (i / spokeCount) * Math.PI * 2;
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(ang) * spokeR, Math.sin(ang) * spokeR);
+    }
+    ctx.lineWidth = 0.9; ctx.strokeStyle = "#697583"; ctx.stroke();
+
+    // Hub
+    ctx.beginPath(); ctx.arc(0, 0, 3.1, 0, Math.PI * 2); ctx.fillStyle = "#cdd4de"; ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, 1.3, 0, Math.PI * 2); ctx.fillStyle = "#8b96a3"; ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBike() {
+    drawWheel(rear); drawWheel(front);
+
+    // Convert the wheels' world position to local coordinates
+    function toLocal(worldPos) {
+      const dx = worldPos.x - chassis.position.x;
+      const dy = worldPos.y - chassis.position.y;
+      const cos = Math.cos(-chassis.angle);
+      const sin = Math.sin(-chassis.angle);
+      return { x: (dx * cos - dy * sin) * facing, y: dx * sin + dy * cos };
+    }
+    const rearLocal = toLocal(rear.position);
+    const frontLocal = toLocal(front.position);
+
+    // Everything in chassis coordinates (simple and working)
+    ctx.save();
+    ctx.translate(chassis.position.x, chassis.position.y);
+    ctx.rotate(chassis.angle);
+    ctx.scale(facing, 1);
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+
+    // Chassis points (local) - larger front triangle
+    const bb = { x: -4, y: 15 };        // bottom bracket a bit further back/lower
+    const seatTop = { x: -12, y: -16 }; // top of the seat tube
+    const headTop = { x: 22, y: -17 };  // top of the head tube forward/up -> longer reach
+    const headBot = { x: 24, y: -5 };   // bottom of the head tube forward -> larger front triangle
+
+    // Frame (pro-aero red)
+    ctx.strokeStyle = "#d8161d";
+    ctx.lineWidth = 4.6;
+    ctx.beginPath();
+    ctx.moveTo(seatTop.x, seatTop.y); ctx.lineTo(headTop.x, headTop.y);   // top tube
+    ctx.moveTo(seatTop.x, seatTop.y); ctx.lineTo(bb.x, bb.y);             // seat tube
+    ctx.moveTo(bb.x, bb.y); ctx.lineTo(headTop.x, headTop.y);             // down tube -> toward the handlebar!
+    ctx.stroke();
+
+    // Rear triangle, thinner
+    ctx.lineWidth = 3.2;
+    ctx.beginPath();
+    ctx.moveTo(bb.x, bb.y); ctx.lineTo(rearLocal.x, rearLocal.y);         // chainstay
+    ctx.moveTo(seatTop.x, seatTop.y); ctx.lineTo(rearLocal.x, rearLocal.y); // seatstay
+    ctx.stroke();
+
+    // Dark accent on the down tube (race look)
+    ctx.strokeStyle = "#1a1d22";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(bb.x + 1, bb.y - 1);
+    ctx.lineTo(headTop.x - 1, headTop.y + 1);
+    ctx.stroke();
+
+    // Front fork
+    ctx.strokeStyle = "#d8161d";
+    ctx.lineWidth = 4.2;
+    ctx.beginPath();
+    // Head tube straight
+    ctx.moveTo(headTop.x, headTop.y);
+    ctx.lineTo(headBot.x, headBot.y);
+    ctx.stroke();
+    
+    // Fork - straight and fully rigid
+    ctx.beginPath();
+    ctx.moveTo(headBot.x, headBot.y);
+    ctx.lineTo(frontLocal.x, frontLocal.y);
+    ctx.stroke();
+
+    // Saddle
+    ctx.strokeStyle = "#24384a";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(seatTop.x - 5, seatTop.y - 2);
+    ctx.lineTo(seatTop.x + 4, seatTop.y - 2);
+    ctx.stroke();
+
+    // Handlebar + stem (cyclocross/dropbar, J-curve)
+    const stem = { x: headTop.x + 3.8, y: headTop.y - 2.6 };
+    const hood = { x: stem.x + 5.2, y: stem.y - 0.5 };
+    ctx.beginPath();
+    ctx.moveTo(headTop.x, headTop.y);
+    ctx.lineTo(stem.x, stem.y);
+    ctx.lineTo(hood.x, hood.y);
+    ctx.bezierCurveTo(
+      hood.x + 2.3, hood.y + 1.4,
+      hood.x + 1.6, hood.y + 5.0,
+      hood.x - 0.8, hood.y + 7.0
+    );
+    ctx.quadraticCurveTo(hood.x - 2.3, hood.y + 8.0, hood.x - 1.6, hood.y + 8.9);
+    ctx.stroke();
+
+    // Bottom bracket
+    ctx.fillStyle = "#24384a";
+    ctx.beginPath();
+    ctx.arc(bb.x, bb.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Drivetrain: chainring + chain + cassette (simplified)
+    const chainringR = 6.6;
+    const rearCog = { x: rearLocal.x + 1.6, y: rearLocal.y + 0.4 };
+    const rearCogR = 3.2;
+
+    // Chainring
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(bb.x, bb.y, chainringR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(bb.x, bb.y, chainringR - 2.2, 0, Math.PI * 2);
+    ctx.strokeStyle = "#5f6670";
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+
+    // Cassette / rear cog
+    ctx.fillStyle = "#12161b";
+    ctx.beginPath();
+    ctx.arc(rearCog.x, rearCog.y, rearCogR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#6f7783";
+    ctx.lineWidth = 0.9;
+    ctx.stroke();
+
+    // Chain: runs diagonally from the large chainring to the small rear cog
+    const chainTopFront = { x: bb.x - chainringR * 0.84, y: bb.y - chainringR * 0.36 };
+    const chainTopRear = { x: rearCog.x + rearCogR * 0.92, y: rearCog.y - rearCogR * 0.56 };
+    const chainBotFront = { x: bb.x - chainringR * 0.90, y: bb.y + chainringR * 0.40 };
+    const chainBotRear = { x: rearCog.x + rearCogR * 0.88, y: rearCog.y + rearCogR * 0.62 };
+
+    ctx.strokeStyle = "#2a2f36";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(chainTopFront.x, chainTopFront.y);
+    ctx.lineTo(chainTopRear.x, chainTopRear.y);
+    ctx.moveTo(chainBotFront.x, chainBotFront.y);
+    ctx.lineTo(chainBotRear.x, chainBotRear.y);
+    ctx.stroke();
+
+    // Chain arcs on the cogs (contact points)
+    ctx.strokeStyle = "#3a404a";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(bb.x, bb.y, chainringR + 0.15, 2.55, 3.76);            // chainring, rear part
+    ctx.arc(rearCog.x, rearCog.y, rearCogR + 0.12, -0.68, 0.82);   // rear cog, front part
+    ctx.stroke();
+
+    // Rear derailleur (black, simple)
+    ctx.fillStyle = "#0f1216";
+    ctx.beginPath();
+    ctx.moveTo(rearLocal.x + 2.0, rearLocal.y + 4.0);
+    ctx.lineTo(rearLocal.x + 6.0, rearLocal.y + 7.8);
+    ctx.lineTo(rearLocal.x + 1.8, rearLocal.y + 9.2);
+    ctx.closePath();
+    ctx.fill();
+
+    // Cranks
+    const cl = 9, ca = crankAngle;
+    const ped1 = { x: bb.x + Math.cos(ca) * cl, y: bb.y + Math.sin(ca) * cl };
+    const ped2 = { x: bb.x - Math.cos(ca) * cl, y: bb.y - Math.sin(ca) * cl };
+    ctx.strokeStyle = "#cfe0f0"; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(ped1.x, ped1.y); ctx.lineTo(bb.x, bb.y); ctx.lineTo(ped2.x, ped2.y);
+    ctx.stroke();
+    ctx.fillStyle = "#ff9f43";
+    ctx.beginPath(); ctx.arc(ped1.x, ped1.y, 2.3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ped2.x, ped2.y, 2.3, 0, Math.PI * 2); ctx.fill();
+
+    // Rider (longer back + longer legs)
+    const hip = { x: seatTop.x - 0.8, y: seatTop.y - 4.2 }; // hips higher onto the saddle
+    const sho = { x: 15, y: -45 };                       // shoulder further forward and up
+    const hand = { x: hood.x + 0.5, y: hood.y + 0.9 };  // hands on the hoods
+
+    // Legs to the pedals: all-black outfit, no stretching (fixed bone lengths)
+    const frontLeg = { p: ped1 };
+    // The rear leg is projected onto a smaller, further-back pedal path -> doesn't "wrap forward"
+    const rearPedVisual = {
+      x: bb.x + (ped2.x - bb.x) * 0.78,
+      y: bb.y + (ped2.y - bb.y) * 0.78 + 0.8,
+    };
+    const rearLeg = { p: rearPedVisual };
+
+    // 2-bone IK solution: thigh and shin stay constant length
+    function solveKnee(hipP, footP, thighLen, shinLen, bendSign) {
+      const dx = footP.x - hipP.x;
+      const dy = footP.y - hipP.y;
+      const d = Math.hypot(dx, dy) || 0.0001;
+      const ux = dx / d;
+      const uy = dy / d;
+      const nx = -uy;
+      const ny = ux;
+      const maxReach = thighLen + shinLen - 0.001;
+      const clampedD = Math.min(d, maxReach);
+      const a = (thighLen * thighLen - shinLen * shinLen + clampedD * clampedD) / (2 * clampedD);
+      const hSq = Math.max(0, thighLen * thighLen - a * a);
+      const h = Math.sqrt(hSq);
+      const px = hipP.x + ux * a;
+      const py = hipP.y + uy * a;
+      return { x: px + nx * h * bendSign, y: py + ny * h * bendSign };
+    }
+
+    const frontKnee = solveKnee(hip, frontLeg.p, 25.5, 22.5, -1);
+    const rearKnee = solveKnee(hip, rearLeg.p, 23.0, 20.0, -1);
+    const footLen = 6.6;
+    const footW = 1.2;
+    function drawFoot(p, dirState) {
+      // Seamless direction: continuous force vector + soft angle filtering.
+      const crankDx = p.x - bb.x;
+      const crankDy = p.y - bb.y;
+      const crankLen = Math.hypot(crankDx, crankDy) || 1;
+      const tanX = (-crankDy / crankLen) * facing;
+      const tanY = ( crankDx / crankLen) * facing;
+
+      const baseLen = Math.hypot(facing, 0.08) || 1;
+      const baseX = facing / baseLen;
+      const baseY = 0.08 / baseLen;
+      const targetX = tanX * 0.14 + baseX * 0.86;
+      const targetY = tanY * 0.14 + baseY * 0.86;
+
+      const baseA = Math.atan2(baseY, baseX);
+      const rawTargetA = Math.atan2(targetY, targetX);
+      let relA = rawTargetA - baseA;
+      while (relA > Math.PI) relA -= Math.PI * 2;
+      while (relA < -Math.PI) relA += Math.PI * 2;
+      const maxTilt = 0.34;
+      relA = Math.max(-maxTilt, Math.min(maxTilt, relA));
+      const targetA = baseA + relA;
+
+      const prevA = Math.atan2(dirState.y, dirState.x);
+      let delta = targetA - prevA;
+      while (delta > Math.PI) delta -= Math.PI * 2;
+      while (delta < -Math.PI) delta += Math.PI * 2;
+      const nextA = prevA + delta * 0.12;
+
+      let tx = Math.cos(nextA);
+      let ty = Math.sin(nextA);
+      dirState.x = tx;
+      dirState.y = ty;
+
+      const fx0 = p.x - tx * footW;
+      const fy0 = p.y - ty * footW;
+      const fx1 = p.x + tx * (footLen - footW);
+      const fy1 = p.y + ty * (footLen - footW);
+      ctx.beginPath();
+      ctx.moveTo(fx0, fy0);
+      ctx.lineTo(fx1, fy1);
+      ctx.stroke();
+    }
+
+    // Rear leg (visible, but behind the frame)
+    ctx.strokeStyle = "#0f1216";
+    ctx.lineWidth = 3.8;
+    ctx.beginPath();
+    ctx.moveTo(hip.x, hip.y); ctx.lineTo(rearKnee.x, rearKnee.y); ctx.lineTo(rearLeg.p.x, rearLeg.p.y);
+    ctx.stroke();
+    ctx.lineWidth = 3.0;
+    ctx.strokeStyle = "#0b0d10";
+    drawFoot(rearLeg.p, rearFootDir);
+
+    // Draw the frame over the leg -> the leg stays visually behind
+    ctx.strokeStyle = "#d8161d";
+    ctx.lineWidth = 4.6;
+    ctx.beginPath();
+    ctx.moveTo(seatTop.x, seatTop.y); ctx.lineTo(headTop.x, headTop.y);
+    ctx.moveTo(seatTop.x, seatTop.y); ctx.lineTo(bb.x, bb.y);
+    ctx.moveTo(bb.x, bb.y); ctx.lineTo(headTop.x, headTop.y);
+    ctx.stroke();
+    ctx.lineWidth = 3.2;
+    ctx.beginPath();
+    ctx.moveTo(bb.x, bb.y); ctx.lineTo(rearLocal.x, rearLocal.y);
+    ctx.moveTo(seatTop.x, seatTop.y); ctx.lineTo(rearLocal.x, rearLocal.y);
+    ctx.stroke();
+
+    // Front leg on top
+    ctx.strokeStyle = "#0f1216";
+    ctx.lineWidth = 4.5;
+    ctx.beginPath();
+    ctx.moveTo(hip.x, hip.y); ctx.lineTo(frontKnee.x, frontKnee.y); ctx.lineTo(frontLeg.p.x, frontLeg.p.y);
+    ctx.stroke();
+
+    // Front foot on top
+    ctx.lineWidth = 3.0;
+    ctx.strokeStyle = "#0b0d10";
+    drawFoot(frontLeg.p, frontFootDir);
+
+    // Back more curved (black riding outfit)
+    ctx.strokeStyle = "#0f1216";
+    ctx.lineWidth = 4.5;
+    ctx.beginPath();
+    ctx.moveTo(hip.x, hip.y);
+    ctx.quadraticCurveTo(hip.x + 11, hip.y - 28, sho.x, sho.y);
+    ctx.stroke();
+
+    // Arm: the elbow is derived from the normal of the shoulder-hand line
+    const armDx = hand.x - sho.x;
+    const armDy = hand.y - sho.y;
+    const armLen = Math.hypot(armDx, armDy) || 1;
+    const armNx = -armDy / armLen;
+    const armNy = armDx / armLen;
+    const elbow = {
+      x: (sho.x + hand.x) / 2 + armNx * 2.8,
+      y: (sho.y + hand.y) / 2 + armNy * 2.8,
+    };
+    ctx.lineWidth = 3.9;
+    ctx.beginPath();
+    ctx.moveTo(sho.x, sho.y);
+    ctx.lineTo(elbow.x, elbow.y);
+    ctx.lineTo(hand.x, hand.y);
+    ctx.stroke();
+
+    // Elbow joint position
+    ctx.beginPath();
+    ctx.arc(elbow.x, elbow.y, 1.25, 0, Math.PI * 2);
+    ctx.fillStyle = "#0f1216";
+    ctx.fill();
+
+    // Neck (clear)
+    const neckBase = { x: sho.x + 0.6, y: sho.y + 0.2 };
+    const neckTop = { x: sho.x + 2.5, y: sho.y - 5.1 };
+    ctx.strokeStyle = "#ffd166";
+    ctx.lineWidth = 3.2;
+    ctx.beginPath();
+    ctx.moveTo(neckBase.x, neckBase.y);
+    ctx.lineTo(neckTop.x, neckTop.y);
+    ctx.stroke();
+
+    // Head (clear)
+    const head = { x: sho.x + 6.0, y: sho.y - 10.4 };
+    ctx.beginPath();
+    ctx.arc(head.x, head.y, 6.8, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffd166";
+    ctx.fill();
+    ctx.strokeStyle = "#0a0e14";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Ear + eye
+    ctx.beginPath();
+    ctx.arc(head.x - 2.4, head.y - 0.7, 0.9, 0, Math.PI * 2);
+    ctx.fillStyle = "#f3b366";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(head.x + 2.6, head.y - 1.4, 0.55, 0, Math.PI * 2);
+    ctx.fillStyle = "#1a1a1a";
+    ctx.fill();
+
+    // Helmet: upper half without a seam artifact
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(head.x - 8.5, head.y - 9.0, 17.0, 9.1); // only the top half of the head
+    ctx.clip();
+    ctx.fillStyle = "#f8fbff";
+    ctx.strokeStyle = "#8792a0";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(head.x, head.y, 7.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    // Helmet bottom edge + front edge
+    ctx.strokeStyle = "#7f8a97";
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(head.x - 7.0, head.y - 0.2);
+    ctx.lineTo(head.x + 6.6, head.y - 0.2);
+    ctx.stroke();
+    ctx.strokeStyle = "#283241";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(head.x + 3.1, head.y - 2.5);
+    ctx.lineTo(head.x + 7.1, head.y - 1.2);
+    ctx.stroke();
+
+    // Drivetrain in front: chainring + cassette + lower chain
+    // (drawn last so it stays over the legs/tubes)
+    const lowerChainFront = { x: bb.x - chainringR * 0.92, y: bb.y + chainringR * 0.52 };
+    const lowerChainRear = { x: rearCog.x + rearCogR * 0.92, y: rearCog.y + rearCogR * 0.72 };
+
+    ctx.strokeStyle = "#2e343c";
+    ctx.lineWidth = 1.7;
+    ctx.beginPath();
+    ctx.moveTo(lowerChainFront.x, lowerChainFront.y);
+    ctx.lineTo(lowerChainRear.x, lowerChainRear.y);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#3a404a";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(bb.x, bb.y, chainringR + 0.18, 2.75, 3.95);            // lower sector of the chainring
+    ctx.arc(rearCog.x, rearCog.y, rearCogR + 0.14, 0.02, 1.05);    // lower sector of the rear cog
+    ctx.stroke();
+
+    // Chainring on top
+    ctx.strokeStyle = "#0f1216";
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.arc(bb.x, bb.y, chainringR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(bb.x, bb.y, chainringR - 2.2, 0, Math.PI * 2);
+    ctx.strokeStyle = "#6d7682";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // Cassette on top
+    ctx.fillStyle = "#101418";
+    ctx.beginPath();
+    ctx.arc(rearCog.x, rearCog.y, rearCogR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#7a838f";
+    ctx.lineWidth = 1.0;
+    ctx.stroke();
+
+    // Front leg topmost (also over the chainring)
+    ctx.strokeStyle = "#0f1216";
+    ctx.lineWidth = 4.5;
+    ctx.beginPath();
+    ctx.moveTo(hip.x, hip.y); ctx.lineTo(frontKnee.x, frontKnee.y); ctx.lineTo(frontLeg.p.x, frontLeg.p.y);
+    ctx.stroke();
+    ctx.lineWidth = 3.0;
+    ctx.strokeStyle = "#0b0d10";
+    drawFoot(frontLeg.p, frontFootDir);
+
+    ctx.restore();
+  }
+
+  // --- HUD --------------------------------------------------------------
+  const $ = (id) => document.getElementById(id);
+  const overlay = $("overlay");
+  function fmtTime(ms) {                          // Across style mm:ss:cc
+    if (!(ms > 0)) ms = 0;
+    const p = (n) => String(n).padStart(2, "0");
+    return p(Math.floor(ms / 60000)) + ":" + p(Math.floor(ms / 1000) % 60) + ":" + p(Math.floor(ms / 10) % 100);
+  }
+  function updateHUD() {
+    const now = state === "play" ? performance.now() : endT;
+    const t = currentRunMs(now);
+    $("clkTime").textContent = fmtTime(t);
+    $("clkBest").textContent = best === null ? "--:--:--" : fmtTime(best * 1000);
+    const distKm = Math.max(0, tripMeters) / 1000;
+    const speedNow = Math.round(Math.max(0, wheelSpeedKph));
+    const cadNow = Math.round(Math.max(0, cadenceRpm));
+    const progress = Math.max(0, Math.min(1, tripMeters / Math.max(1, LEVEL_LENGTH_M)));
+
+    $("speed").textContent = speedNow;
+    $("speedBar").style.width = Math.max(0, Math.min(100, (wheelSpeedKph / 100) * 100)).toFixed(1) + "%";
+    $("dist").textContent = distKm.toFixed(2) + " km";
+    $("distMeta").textContent = "/ " + (LEVEL_LENGTH_M / 1000).toFixed(2) + " km";
+    drawMiniProfile();
+
+    $("pedal").textContent = cadNow + " rpm";
+    $("cadBar").style.width = Math.max(0, Math.min(100, (cadenceRpm / Math.max(1, CFG.cadenceMaxRpm)) * 100)).toFixed(1) + "%";
+
+    $("zone").textContent = zoneAt(chassis.position.x).name;
+
+    for (let i = 1; i <= 3; i++) {
+      const icon = $("radler" + i);
+      if (!icon) continue;
+      if (i <= collectedCount) icon.classList.add("got");
+      else icon.classList.remove("got");
+    }
+
+    const m = $("muteToggle");
+    if (m) m.textContent = "SOUND (M)";
+  }
+  function showOverlay() {
+    const big = $("overlayBig"), sub = $("overlaySub");
+    if (state === "crash") {
+      big.textContent = "CRASH!"; big.className = "big crash";
+      sub.innerHTML = 'Press <kbd>R</kbd> to try again';
+    } else {
+      big.textContent = "FINISH!"; big.className = "big win";
+      sub.innerHTML = `Time ${fmtTime(currentRunMs(endT))}${newRecord ? " · <b>NEW RECORD!</b>" : ""} · press <kbd>R</kbd> to restart`;
+    }
+    overlay.classList.add("show");
+  }
+
+  // --- Main loop ------------------------------------------------------
+  let last = performance.now();
+  function loop(now) {
+      appendGroundUntil(chassis.position.x + (W / Math.max(0.5, cam.zoom)) + TRACK_PAD_AHEAD);
+    spawnCollectiblesAhead(chassis.position.x + 2800);
+
+    let dt = now - last; last = now;
+    dt = Math.min(dt, 32);                       // stabilize big jumps
+
+    if (introVisible) {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, W, H);
+      requestAnimationFrame(loop);
+      return;
+    }
+
+    // Gearbox: crank speed -> wheel speed with a BIG ratio.
+    // Direct relation to the road: wheel speed = crank speed × gear (freewheel).
+    const inst = crankAccum; crankAccum = 0;
+    const frameSec = Math.max(dt, 1) / 1000;
+    const preWheelKph = Math.abs(rear.angularVelocity) * CFG.wheelR * 0.06 * 3.6;
+    const terrainAngNow = Math.atan2(
+      groundYAt(front.position.x) - groundYAt(rear.position.x),
+      Math.max(1, front.position.x - rear.position.x)
+    );
+    const flatish = Math.abs(terrainAngNow) < 0.22;  // ramp (steep) -> no anti-hop, allowed to launch
+    const slopeAlongTravel = Math.sin(terrainAngNow) * (facing >= 0 ? 1 : -1);
+    const downhill = Math.max(0, -slopeAlongTravel);
+    const uphill = Math.max(0, slopeAlongTravel);
+    // Steep climb -> harder to pedal (arcade feel).
+    const climbTarget = 1 - Math.min(0.72, uphill * CFG.climbHardness);
+    climbResist += (climbTarget - climbResist) * 0.2;
+    const effectiveKph = preWheelKph + downhill * CFG.bounceDownhillBonusKph - uphill * CFG.bounceUphillPenaltyKph;
+    const bounceTLinear = (effectiveKph - CFG.bounceNoHopKph) / Math.max(1, CFG.bounceFullKph - CFG.bounceNoHopKph);
+    const bounceT = clamp01(bounceTLinear);
+    const bounceEase = bounceT * bounceT * (3 - 2 * bounceT);
+    const maxCrankVelFrame = (CFG.cadenceMaxRpm / 60) * Math.PI * 2 * frameSec;
+    crankVel += (inst - crankVel) * 0.35;        // smoothed crank speed
+    crankVel = Math.max(-maxCrankVelFrame, Math.min(maxCrankVelFrame, crankVel));
+    if (crankVel < 0.0005) crankVel = 0;
+    const gear = gearRatioNow();
+    if (state === "play" && crankVel > 0 && rearWheelGrounded()) {
+      let wt = facing * crankVel * gear * climbResist;
+      wt = facing > 0 ? Math.min(wt, CFG.pedalMax) : Math.max(wt, -CFG.pedalMax);
+      if (facing > 0) Body.setAngularVelocity(rear, Math.max(rear.angularVelocity, wt));
+      else            Body.setAngularVelocity(rear, Math.min(rear.angularVelocity, wt));
+    }
+    const crankDelta = Math.abs(crankVel);
+    const coastVel = Math.min(
+      CFG.coastCadenceMax,
+      maxCrankVelFrame,
+      Math.abs(rear.angularVelocity) / gear * CFG.coastCadenceMul
+    );
+    const targetLegVel = Math.max(crankDelta, coastVel);
+    const legResponse = targetLegVel > legCrankVel ? 0.10 : 0.028;
+    legCrankVel += (targetLegVel - legCrankVel) * legResponse;
+    if (targetLegVel < 0.002) legCrankVel *= 0.993;
+    if (legCrankVel < 0.0005) legCrankVel = 0;
+
+    const instantRpm = Math.min(
+      CFG.cadenceMaxRpm,
+      (legCrankVel / (Math.PI * 2)) * (1000 / Math.max(dt, 1)) * 60
+    );
+    const cadenceResponse = instantRpm > cadenceRpm ? 0.22 : 0.05;
+    cadenceRpm += (instantRpm - cadenceRpm) * cadenceResponse;
+    cadenceRpm = Math.min(CFG.cadenceMaxRpm, cadenceRpm);
+    if (cadenceRpm < 0.4) cadenceRpm = 0;
+    cadence = Math.min(1, legCrankVel / CFG.cadenceFull);
+    const spinSign = Math.sign(rear.angularVelocity) || facing;
+    crankAngle += legCrankVel * spinSign;        // cranks also turn slightly while coasting
+    pedalPulse *= 0.85;
+    const sinceScroll = lastScrollMs > 0 ? now - lastScrollMs : 999;
+    rollBurst *= (sinceScroll > CFG.scrollFastMs * 1.35) ? 0.90 : CFG.burstDecay;
+    if (rollBurst < 0.001) rollBurst = 0;
+
+    // Drive momentum: bike-like start and momentum carry.
+    if (state === "play" && driveMomentum > 0.0001) {
+      const rearOnGround = (rear.position.y - groundYAt(rear.position.x)) > -7;
+      const frontOnGround = (front.position.y - groundYAt(front.position.x)) > -7;
+      const onGround = rearOnGround || frontOnGround;
+      const dir = facing >= 0 ? 1 : -1;
+      const startMul = preWheelKph < CFG.startAssistKph ? CFG.startAssistMul : 1;
+      const burstDriveMul = 0.55 + rollBurst * 0.45;
+      const push = Math.min(driveMomentum * startMul * burstDriveMul, CFG.driveStepMax);
+
+      if (rearOnGround) {
+        const rearTarget = rear.angularVelocity + dir * push;
+        const rearClamped = dir > 0
+          ? Math.min(rearTarget, CFG.pedalMax)
+          : Math.max(rearTarget, -CFG.pedalMax);
+        Body.setAngularVelocity(rear, rearClamped);
+      }
+
+      if (CFG.frontDriveShare > 0) {
+        const frontTarget = front.angularVelocity + dir * push * CFG.frontDriveShare;
+        const frontCap = CFG.pedalMax * 0.90;
+        const frontClamped = dir > 0
+          ? Math.min(frontTarget, frontCap)
+          : Math.max(frontTarget, -frontCap);
+        Body.setAngularVelocity(front, frontClamped);
+      }
+
+      if (onGround) {
+        const terrainAng = Math.atan2(
+          groundYAt(front.position.x) - groundYAt(rear.position.x),
+          Math.max(1, front.position.x - rear.position.x)
+        );
+        let err = terrainAng - chassis.angle;
+        while (err > Math.PI) err -= Math.PI * 2;
+        while (err < -Math.PI) err += Math.PI * 2;
+        const corr = err * CFG.slopeAssist;
+        // Don't auto-level/damp rotation while the player is actively leaning
+        // -> so pedaling during a wheelie can speed up the rotation.
+        const leaningNow = !!(keys["a"] || keys["d"] || keys["arrowleft"] || keys["arrowright"]);
+        if (!leaningNow) {
+          Body.setAngularVelocity(chassis, (chassis.angularVelocity + corr) * CFG.antiFlipDamp);
+        }
+        const press = CFG.tractionPress * Math.min(1, driveMomentum / Math.max(0.001, CFG.scrollKickMax));
+        Body.applyForce(chassis, chassis.position, { x: 0, y: press });
+
+        // Speed-dependent anti-hop: tight below 30 km/h, more permissive at 100+ km/h.
+        const hopClamp = lerp(CFG.hopClampLow, CFG.hopClampHigh, bounceEase);
+        const hopVelThreshold = -lerp(0.24, 0.42, bounceEase);
+        if (rearOnGround && push > 0.001 && flatish && chassis.velocity.y < hopVelThreshold) {
+          Body.setVelocity(chassis, { x: chassis.velocity.x, y: chassis.velocity.y * hopClamp });
+        }
+      }
+
+      if (rearOnGround) {
+        const retentionT = Math.max(0, Math.min(1, Math.max(preWheelKph / 65, driveMomentum / CFG.scrollKickMax)));
+        const decay = CFG.momentumDecayLow + (CFG.momentumDecayHigh - CFG.momentumDecayLow) * retentionT;
+        driveMomentum *= decay;
+      } else {
+        driveMomentum *= CFG.momentumAirDecay;
+      }
+      if (driveMomentum < 0.0001) driveMomentum = 0;
+    }
+
+    applyControls();
+    Engine.update(engine, dt);
+
+    if (state === "play") {
+      const rearGroundNow = (rear.position.y - groundYAt(rear.position.x)) > -7;
+      const frontGroundNow = (front.position.y - groundYAt(front.position.x)) > -7;
+      if ((rearGroundNow || frontGroundNow) && flatish) {
+        const landChassisMul = lerp(CFG.landChassisLow, CFG.landChassisHigh, bounceEase);
+        const landWheelMul = lerp(CFG.landWheelLow, CFG.landWheelHigh, bounceEase);
+        const chassisLandThreshold = -lerp(0.08, 0.30, bounceEase);
+        const wheelLandThreshold = -lerp(0.06, 0.25, bounceEase);
+        if (chassis.velocity.y < chassisLandThreshold) {
+          Body.setVelocity(chassis, { x: chassis.velocity.x, y: chassis.velocity.y * landChassisMul });
+        }
+        if (rear.velocity.y < wheelLandThreshold) {
+          Body.setVelocity(rear, { x: rear.velocity.x, y: rear.velocity.y * landWheelMul });
+        }
+        if (front.velocity.y < wheelLandThreshold) {
+          Body.setVelocity(front, { x: front.velocity.x, y: front.velocity.y * landWheelMul });
+        }
+      }
+    }
+
+    if (state === "win") {
+      // At the finish, a smooth roll-down: the bike gradually stops.
+      Body.setAngularVelocity(rear, rear.angularVelocity * 0.972);
+      Body.setAngularVelocity(front, front.angularVelocity * 0.972);
+      Body.setAngularVelocity(chassis, chassis.angularVelocity * 0.94);
+      Body.setVelocity(chassis, { x: chassis.velocity.x * 0.985, y: chassis.velocity.y });
+      Body.setVelocity(rear, { x: rear.velocity.x * 0.985, y: rear.velocity.y });
+      Body.setVelocity(front, { x: front.velocity.x * 0.985, y: front.velocity.y });
+    }
+
+    const dAngRaw = rear.angle - lastRearAngle;
+    let dAng = dAngRaw;
+    while (dAng > Math.PI) dAng -= Math.PI * 2;
+    while (dAng < -Math.PI) dAng += Math.PI * 2;
+    lastRearAngle = rear.angle;
+
+    const dMeters = Math.abs(dAng) / (Math.PI * 2) * wheelCircumferenceM();
+    const dtSec = Math.max(0.001, dt / 1000);
+    const speedKphTarget = (dMeters / dtSec) * 3.6;
+    wheelSpeedKph += (speedKphTarget - wheelSpeedKph) * 0.24;
+    tripMeters += dMeters;
+
+    updateRollingAudio(dt);
+    maybeStartTimer(now);
+
+    if (state === "play") {
+      // A genuine player wheelie: leaning back + pedaling while the front wheel is
+      // lifted and the rear is still on the ground (distinguishes it from jumps/flying).
+      const leaningBack = !!(keys["a"] || keys["arrowleft"]);
+      const pedalingNow = cadence > 0.18;
+      if (leaningBack && pedalingNow && rearWheelGrounded() && !frontWheelGrounded()) {
+        lastRealWheelieMs = now;
+      }
+      pickupCollectibles();
+      // Crash only from the head touching the ground (head bottom reaches the surface).
+      const head = rotPoint(chassis, 8, -36);
+      if (head.y > groundYAt(head.x) - 6) crash();
+      if (chassis.position.y > 4000) crash();      // fell off the world
+      // Finish only when practically the whole bike is over the line, so wheelie-ing won't trigger it too early.
+      if (rear.position.x >= finishX) win();
+    }
+
+    updateCamera();
+    drawBackground();
+    worldTransform();
+    drawTerrain();
+    drawDeco();
+    drawCollectibles();
+    drawFinish();
+    drawBike();
+    ctx.restore();
+    updateHUD();
+
+    if (state === "play") {
+      overlay.classList.remove("show");
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  // --- Startup -------------------------------------------------------
+  buildWorld();
+  // Hide the intro if SKIP_INTRO=true
+  if (skipIntro) {
+    $("intro").classList.add("hide");
+    last = performance.now();
+  }
+  requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
